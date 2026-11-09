@@ -185,7 +185,7 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     Then "k8s.cronjob:worker" is drift, "is suspended"
     And kubectl was given nothing to write
 
-  Scenario Outline: A schedule pubkit cannot read needs within
+  Scenario Outline: A schedule pubdeploy cannot read needs within
     Given the deploy block also needs <need>
     And the CronJob "worker" runs on "<schedule>"
     When I run pubdeploy "walk"
@@ -193,7 +193,7 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
 
     Examples:
       | need                                                       | schedule        | state   | text                                 |
-      | {"type": "k8s.cronjob", "name": "worker"}                  | 0 9 1-7 * 1     | unknown | is not one pubkit reads              |
+      | {"type": "k8s.cronjob", "name": "worker"}                  | 0 9 1-7 * 1     | unknown | is not one pubdeploy reads           |
       | {"type": "k8s.cronjob", "name": "worker", "within": "36h"} | 0 9 1-7 * 1     | ready   | within 36 h                          |
       | {"type": "k8s.cronjob", "name": "worker"}                  | */15 * * * *    | drift   | over 0.5 h ago                       |
       | {"type": "k8s.cronjob", "name": "worker"}                  | 30 2 * * *      | ready   | within 48 h                          |

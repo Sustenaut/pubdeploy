@@ -1,13 +1,13 @@
 """The deploy block's schema, and what is wrong with a block: phrases, one
 per problem, in the voice `pubkit sync` prints the other blocks' in.
 
-The block's own keys are in schema.json, shipped with pubkit; each need's
+The block's own keys are in schema.json, shipped with pubdeploy; each need's
 keys are its type's schema (`pubdeploy types` lists them), with the keys
-every need may carry: type, name and after. pubkit has no JSON schema
+every need may carry: type, name and after. pubdeploy has no JSON schema
 library, so `validate` reads the part of JSON schema these schemas use:
 type, properties, required, additionalProperties, items, enum, const,
 pattern, minLength, maxLength, minItems, minimum, maximum and $ref within the
-document. A schema's `x-phrase` says, in pubkit's words, what a value that
+document. A schema's `x-phrase` says, in pubdeploy's words, what a value that
 fails it must be, and `x-name` what an object is, for a key it does not take.
 """
 
@@ -180,10 +180,10 @@ def need_problems(entry: Any, i: int, types: dict[str, NeedType], root: Path,
             return [f"deploy: needs[{i}]: {entry['type']} is {PUBSEC}'s: list {PUBSEC} in deploy.providers, "
                     f"as `pubkit sync` does, and run ./pubdeploy, which runs it"]
         if providers:
-            return [f"deploy: needs[{i}]: {entry['type']} is no type of need pubkit or an installed package "
+            return [f"deploy: needs[{i}]: {entry['type']} is no type of need pubdeploy or an installed package "
                     f"offers; it would be {listed(providers, 'or')}'s, of deploy.providers, which ./pubdeploy runs "
                     f"with: run ./pubdeploy, or install {listed(providers, 'or')}"]
-        return [f"deploy: needs[{i}]: {entry['type']} is no type of need pubkit knows; "
+        return [f"deploy: needs[{i}]: {entry['type']} is no type of need pubdeploy knows; "
                 f"it knows {listed(sorted(types))}; a package's types are named in deploy.providers"]
     name = entry.get("name") if isinstance(entry.get("name"), str) else None
     label = f"deploy: needs[{i}] ({entry['type']}:{name})" if name else f"deploy: needs[{i}] ({entry['type']})"

@@ -42,10 +42,6 @@
         "pubdeploy": {
           "type": "string",
           "description": "The pubdeploy that walked."
-        },
-        "pubkit": {
-          "type": "string",
-          "description": "The same version as pubdeploy, kept for one release for readers of the field's old name; then dropped."
         }
       }
     },

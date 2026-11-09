@@ -1,0 +1,4 @@
+{
+  "category": "internal",
+  "change": "The guard that keeps consumers' names out of the deploy code, moved from pubkit's suite"
+}
