@@ -84,7 +84,7 @@ Feature: pubkit sync --check checks pubkit.json's deploy block
   Scenario: A need of a type pubkit does not know is named, with the types it knows
     Given the deploy block also needs {"type": "example.thing", "name": "one"}
     When I check the deploy block
-    Then the only problem starts "deploy: needs[6]: example.thing is no type of need pubkit knows; it knows auth.sign-in-client, bitwarden.generated, bitwarden.secret,"
+    Then the only problem starts "deploy: needs[6]: example.thing is no type of need pubdeploy knows; it knows auth.sign-in-client, bitwarden.generated, bitwarden.secret,"
 
   Scenario: A key a need's type does not take is named, with the keys it takes
     Given the deploy block also needs {"type": "upstream", "name": "files", "health": "https://files.example.eu/healthz", "healthz": "/"}

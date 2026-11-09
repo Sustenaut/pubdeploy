@@ -202,8 +202,7 @@ def check(plan: Plan, ctx: Context, types: dict[str, NeedType] | None = None) ->
     from .walk import walk  # noqa: PLC0415
     from . import __version__  # noqa: PLC0415
     service = {"repository": ctx.slug, "namespace": plan.namespace, "unit": plan.unit or plan.namespace,
-               "commit": git(plan.root, "rev-parse", "HEAD"), "pubdeploy": __version__,
-               "pubkit": __version__}  # the old name, for readers, one release
+               "commit": git(plan.root, "rev-parse", "HEAD"), "pubdeploy": __version__}
     by = ctx.env.get("GITHUB_ACTOR") or git(plan.root, "config", "user.email")
     origin = "actions" if ctx.env.get("GITHUB_ACTIONS") == "true" else (
         "plane" if ctx.env.get("PUBKIT_PLANE") else "laptop")

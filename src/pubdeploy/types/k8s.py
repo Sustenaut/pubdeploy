@@ -1,6 +1,6 @@
 """k8s.namespace, k8s.secrets-declared, k8s.manifests and k8s.cronjob:
 what the cluster must hold, read through kubectl, and what the rendered
-manifests read, which needs no cluster. They use pubkit.k8s, which needs
+manifests read, which needs no cluster. They use pubdeploy.k8s, which needs
 nothing of this package's. k8s.secret, which reads a Secret's values and
 makes one from Bitwarden's, is pubsec's.
 
@@ -259,7 +259,7 @@ class CronJob(Base):
         schedule = str(spec.get("schedule", ""))
         within = duration(given) if given else (2 * every if (every := interval(schedule)) else None)
         if within is None:
-            return Result("unknown", f"CronJob {name}'s schedule {schedule} is not one pubkit reads",
+            return Result("unknown", f"CronJob {name}'s schedule {schedule} is not one pubdeploy reads",
                           fix=f"give the need's within: how recently {name} must have succeeded, such as 36h")
         if spec.get("suspend") is True:
             return Result("drift", f"CronJob {name} is suspended", fixable=False,
