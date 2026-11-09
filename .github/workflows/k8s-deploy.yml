@@ -293,7 +293,7 @@ jobs:
 
       - name: Deploy to the server
         if: steps.gate.outputs.deploy == 'true'
-        uses: Sustenaut/pubkit/actions/deploy-ssh@4c44edc9e49195fe29c51575221106e51840c33e # v0.32.0
+        uses: Sustenaut/pubdeploy/actions/deploy-ssh@327a0d0acfb3d746cb152dc188f37cd4580c8399 # v0.1.0
         with:
           command: ${{ matrix.unit }}
           input: ${{ runner.temp }}/${{ matrix.unit }}.yaml

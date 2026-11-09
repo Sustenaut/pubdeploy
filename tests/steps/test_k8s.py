@@ -127,13 +127,13 @@ def gated(workflow):
     assert on["env"]["SERVER"] == "${{ vars.SUSTENAUT_SERVER }}"
     assert on["env"]["GATE_VALUE"] == "${{ matrix.gate != '' && vars[matrix.gate] || '' }}"
     assert 'if [[ -z "$SERVER" ]]' in on["run"] and '"$GATE_VALUE" != on' in on["run"]
-    deploy = step(workflow, "deploy", "Sustenaut/pubkit/actions/deploy-ssh@")
+    deploy = step(workflow, "deploy", "Sustenaut/pubdeploy/actions/deploy-ssh@")
     assert deploy["if"] == "steps.gate.outputs.deploy == 'true'"
 
 
 @then("it deploys with deploy-ssh, the unit as the command and the rendered manifests as input, over the tailnet")
 def deploys(workflow):
-    with_ = step(workflow, "deploy", "Sustenaut/pubkit/actions/deploy-ssh@")["with"]
+    with_ = step(workflow, "deploy", "Sustenaut/pubdeploy/actions/deploy-ssh@")["with"]
     assert with_["command"] == "${{ matrix.unit }}"
     assert with_["input"] == "${{ runner.temp }}/${{ matrix.unit }}.yaml"
     assert with_["target"] == "deploy@${{ vars.SUSTENAUT_SERVER }}"

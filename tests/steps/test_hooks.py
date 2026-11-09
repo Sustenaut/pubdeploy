@@ -117,3 +117,10 @@ def test_bump_pins_by_tag_when_the_tag_cannot_be_read(tmp_path):
 def test_bump_without_pubdeploy_in_providers_moves_no_workflow(tmp_path):
     (tmp_path / "pubkit.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example"}}))
     assert hooks.bump(tmp_path, gh=fake_gh, find=lambda wheel, gh: None) == []
+
+
+def test_deploy_ssh_passes_its_own_tests():
+    """actions/deploy-ssh/test.sh, which pubkit's CI ran while the action was pubkit's."""
+    script = Path(__file__).resolve().parents[2] / "actions" / "deploy-ssh" / "test.sh"
+    done = subprocess.run(["bash", str(script)], capture_output=True, text=True, check=False, timeout=120)
+    assert done.returncode == 0, done.stdout + done.stderr
