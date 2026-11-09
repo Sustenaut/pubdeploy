@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.1.0 is released as v0.1.0 from commit 92e811d0e1c17c77bf058529f822e2c68b145c40.",
+      "content": "pubdeploy 0.2.0 is released as v0.2.0 from commit 122bdde7185d01af0ee75ec3951d2cba4aadde81.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.1.0",
+            "0.2.0",
             "pubdeploy --version",
-            "pubdeploy 0.1.0",
-            "v0.1.0",
-            "92e811d0e1c17c77bf058529f822e2c68b145c40"
+            "pubdeploy 0.2.0",
+            "v0.2.0",
+            "122bdde7185d01af0ee75ec3951d2cba4aadde81"
           ]
         ]
       },
-      "scope": "the published release v0.1.0 of pubdeploy",
+      "scope": "the published release v0.2.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "92e811d0e1c17c77bf058529f822e2c68b145c40"
+          "revision": "122bdde7185d01af0ee75ec3951d2cba4aadde81"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.1.0 was released on 2026-11-09 from commit 92e811d0e1c17c77bf058529f822e2c68b145c40 with these changes.",
+      "content": "pubdeploy 0.2.0 was released on 2026-11-09 from commit 122bdde7185d01af0ee75ec3951d2cba4aadde81 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,27 +57,23 @@
         ],
         "rows": [
           [
-            "added",
-            "pubdeploy, the deploy walk split out of pubkit: pubdeploy walk, check and types, pubdeploy k8s preflight and diagnose, the deploy block's schema and need types (k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob, github.variable-entry, github.gate, upstream, dns.site, storage.tenant, deploy.rollout, service.health, auth.sign-in-client), the journal, k8s-deploy.yml, deploy-check.yml, actions/deploy-ssh and the kustomize component k8s/components/app, moved from pubkit 0.32.0 with their behaviour; the sustenaut.sync and sustenaut.bump hooks that pubkit's sync and bump call; and the copies of pubkit's small helpers it needs, so it imports nothing of pubkit"
-          ],
-          [
-            "fixed",
-            "Text and the journal say pubdeploy where they said pubkit: a need type no package offers, a CronJob schedule it cannot read, and the docstrings; the journal's service.pubkit is dropped, as nothing reads it"
-          ],
-          [
             "internal",
-            "The guard that keeps consumers' names out of the deploy code, moved from pubkit's suite"
+            "The checks of pubdeploy's code that were left in pubkit's suite: providers.bump, a type no installed package offers, the trigger rewrite, pubsec's types without pubsec, the provider contract and the walk hook"
+          ],
+          [
+            "changed",
+            "k8s-deploy.yml calls pubdeploy's own deploy-ssh, at v0.1.0's commit, in place of pubkit's; the suite runs the action's test.sh; two docstrings say pubdeploy where they said pubkit"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.1.0 of pubdeploy",
+      "scope": "the published release v0.2.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "92e811d0e1c17c77bf058529f822e2c68b145c40"
+          "revision": "122bdde7185d01af0ee75ec3951d2cba4aadde81"
         }
       ]
     }
