@@ -1,4 +1,0 @@
-{
-  "category": "changed",
-  "change": "k8s-deploy.yml calls pubdeploy's own deploy-ssh, at v0.1.0's commit, in place of pubkit's; the suite runs the action's test.sh; two docstrings say pubdeploy where they said pubkit"
-}
