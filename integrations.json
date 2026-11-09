@@ -1,0 +1,80 @@
+{
+  "uses": [
+    {
+      "plugin": "bitwarden.secrets",
+      "paths": [
+        ".github/workflows/deploy-check.yml"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "github.actions-oidc",
+      "paths": [
+        ".github/workflows/deploy-check.yml",
+        "src/pubdeploy/scheduled.py",
+        "src/pubdeploy/store.py"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "github.app-token",
+      "paths": [
+        ".github/workflows/main.yml",
+        ".github/workflows/pr.yml"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "github.ghcr",
+      "paths": [
+        ".github/workflows/k8s-deploy.yml",
+        "src/pubdeploy/units.py"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "github.repo-ops",
+      "paths": [
+        ".github/workflows/deploy-check.yml",
+        ".github/workflows/k8s-deploy.yml",
+        ".github/workflows/wheel.yml",
+        "src/pubdeploy/"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "sonarcloud.scan",
+      "paths": [
+        ".github/workflows/main.yml",
+        ".github/workflows/pr.yml"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "tailscale.tailnet",
+      "paths": [
+        ".github/workflows/deploy-check.yml",
+        ".github/workflows/k8s-deploy.yml",
+        "actions/deploy-ssh/",
+        "src/pubdeploy/implied.py"
+      ],
+      "mode": "required"
+    }
+  ],
+  "other_secrets": [
+    {
+      "name": "SUSTENAUT_DEPLOY_SSH_KEY",
+      "reason": "k8s-deploy.yml's SSH key to a caller's k3s server, which the server pins to its deploy program"
+    }
+  ],
+  "exclude": [
+    {
+      "path": "tests/**",
+      "reason": "Fakes of these services"
+    },
+    {
+      "path": "corpus/**",
+      "reason": "Release records, not code"
+    }
+  ]
+}

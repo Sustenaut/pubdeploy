@@ -1,0 +1,10 @@
+# The functional suite's direct dependencies. Exact pins only; the resolved
+# set with hashes lives in requirements.lock. Regenerate it with `pubkit lock`.
+-r requirements-pubkit.txt
+# `make functional` measures the suite, the `pubdeploy` processes it starts included.
+coverage==7.16.2
+# The manifests the walk reads, and the workflows the suite parses.
+PyYAML==6.0.3
+# pubsec, whose seven need types (the ones that hold a secret's value) the
+# deploy scenarios walk, as ./pubdeploy walks with them.
+pubsec @ https://github.com/Sustenaut/pubsec/releases/download/v0.1.2/pubsec-0.1.2-py3-none-any.whl

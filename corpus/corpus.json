@@ -1,0 +1,11 @@
+{
+  "bound": 67108864,
+  "label": "pubdeploy's own publets",
+  "name": "pubdeploy",
+  "parents": [
+    {
+      "alias": "base",
+      "path": "../../publet-corpus"
+    }
+  ]
+}

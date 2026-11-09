@@ -1,0 +1,24 @@
+{
+  "name": "pubdeploy",
+  "package": "pkg.pubdeploy",
+  "tag": "PKG-PUBDEPLOY-11-2026",
+  "corpus": "corpus",
+  "manifest": {
+    "kind": "pyproject",
+    "path": "pyproject.toml"
+  },
+  "code": [
+    "src/",
+    "pyproject.toml",
+    ".github/workflows/k8s-deploy.yml",
+    ".github/workflows/deploy-check.yml",
+    "actions/",
+    "k8s/"
+  ],
+  "command": {
+    "name": "pubdeploy",
+    "check": "pubdeploy --version"
+  },
+  "install": "pubkit sync writes ./pubdeploy, which runs https://github.com/Sustenaut/pubdeploy/releases/download/{tag}/pubdeploy-{version}-py3-none-any.whl by its sha256",
+  "key": "pub:sha2-256:pkeuiji3cpe2uve5puqzpxfj5trk2kb4ykmhclsuc3r433knf6rq"
+}
