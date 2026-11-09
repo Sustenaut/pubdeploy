@@ -34,7 +34,7 @@ DEPLOY_SETTINGS = {"SUSTENAUT_SERVER": "variable", "SUSTENAUT_KNOWN_HOSTS": "var
                    "TS_GH_OAUTH_SECRET": "secret"}
 SERVER_NAMES = ("SUSTENAUT_SERVER", "SUSTENAUT_KNOWN_HOSTS", "SUSTENAUT_DEPLOY_SSH_KEY")
 COMMON = ("type", "name", "after", "unit")
-# The shapes the manifests ask of a value (pubkit.k8s), by the name a
+# The shapes the manifests ask of a value (pubdeploy.k8s), by the name a
 # k8s.secret need gives the shape, which pubsec's type checks.
 SHAPE_NAMES = {k8s.COOKIE_SECRET.what: "oauth2-proxy-cookie"}
 

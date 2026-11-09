@@ -1,4 +1,4 @@
-"""The need types pubkit has itself, and what their checks and fulfils share."""
+"""The need types pubdeploy has itself, and what their checks and fulfils share."""
 
 from __future__ import annotations
 
