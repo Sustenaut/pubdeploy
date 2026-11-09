@@ -1,0 +1,4 @@
+{
+  "category": "internal",
+  "change": "The checks of pubdeploy's code that were left in pubkit's suite: providers.bump, a type no installed package offers, the trigger rewrite, pubsec's types without pubsec, the provider contract and the walk hook"
+}
