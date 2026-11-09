@@ -1,0 +1,107 @@
+{
+  "claims": {
+    "identity": {
+      "class": "archival",
+      "content": "pubdeploy 0.1.0 is released as v0.1.0 from commit 92e811d0e1c17c77bf058529f822e2c68b145c40.",
+      "data": {
+        "columns": [
+          {
+            "name": "name"
+          },
+          {
+            "name": "version"
+          },
+          {
+            "name": "check"
+          },
+          {
+            "name": "expect"
+          },
+          {
+            "name": "tag"
+          },
+          {
+            "name": "commit"
+          }
+        ],
+        "rows": [
+          [
+            "pubdeploy",
+            "0.1.0",
+            "pubdeploy --version",
+            "pubdeploy 0.1.0",
+            "v0.1.0",
+            "92e811d0e1c17c77bf058529f822e2c68b145c40"
+          ]
+        ]
+      },
+      "scope": "the published release v0.1.0 of pubdeploy",
+      "sources": [
+        {
+          "ref": "pubdeploy",
+          "revision": "92e811d0e1c17c77bf058529f822e2c68b145c40"
+        }
+      ]
+    },
+    "release": {
+      "class": "archival",
+      "content": "pubdeploy 0.1.0 was released on 2026-11-09 from commit 92e811d0e1c17c77bf058529f822e2c68b145c40 with these changes.",
+      "data": {
+        "columns": [
+          {
+            "name": "category"
+          },
+          {
+            "name": "change"
+          }
+        ],
+        "rows": [
+          [
+            "added",
+            "pubdeploy, the deploy walk split out of pubkit: pubdeploy walk, check and types, pubdeploy k8s preflight and diagnose, the deploy block's schema and need types (k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob, github.variable-entry, github.gate, upstream, dns.site, storage.tenant, deploy.rollout, service.health, auth.sign-in-client), the journal, k8s-deploy.yml, deploy-check.yml, actions/deploy-ssh and the kustomize component k8s/components/app, moved from pubkit 0.32.0 with their behaviour; the sustenaut.sync and sustenaut.bump hooks that pubkit's sync and bump call; and the copies of pubkit's small helpers it needs, so it imports nothing of pubkit"
+          ],
+          [
+            "fixed",
+            "Text and the journal say pubdeploy where they said pubkit: a need type no package offers, a CronJob schedule it cannot read, and the docstrings; the journal's service.pubkit is dropped, as nothing reads it"
+          ],
+          [
+            "internal",
+            "The guard that keeps consumers' names out of the deploy code, moved from pubkit's suite"
+          ]
+        ]
+      },
+      "depends": [
+        "#identity"
+      ],
+      "scope": "the published release v0.1.0 of pubdeploy",
+      "sources": [
+        {
+          "ref": "pubdeploy",
+          "revision": "92e811d0e1c17c77bf058529f822e2c68b145c40"
+        }
+      ]
+    }
+  },
+  "created": "2026-11-09T00:00:00Z",
+  "sections": [
+    {
+      "heading": "Identity",
+      "items": [
+        {
+          "ref": "#identity"
+        }
+      ]
+    },
+    {
+      "heading": "Release",
+      "items": [
+        {
+          "ref": "#release"
+        }
+      ]
+    }
+  ],
+  "slug": "pkg.pubdeploy",
+  "tag": "PKG-PUBDEP-11-2026",
+  "title": "pubdeploy"
+}

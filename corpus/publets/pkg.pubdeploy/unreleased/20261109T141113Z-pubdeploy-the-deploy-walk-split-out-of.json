@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "pubdeploy, the deploy walk split out of pubkit: pubdeploy walk, check and types, pubdeploy k8s preflight and diagnose, the deploy block's schema and need types (k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob, github.variable-entry, github.gate, upstream, dns.site, storage.tenant, deploy.rollout, service.health, auth.sign-in-client), the journal, k8s-deploy.yml, deploy-check.yml, actions/deploy-ssh and the kustomize component k8s/components/app, moved from pubkit 0.32.0 with their behaviour; the sustenaut.sync and sustenaut.bump hooks that pubkit's sync and bump call; and the copies of pubkit's small helpers it needs, so it imports nothing of pubkit"
-}
