@@ -1,7 +1,7 @@
 {
   "name": "pubdeploy",
   "package": "pkg.pubdeploy",
-  "tag": "PKG-PUBDEPLOY-11-2026",
+  "tag": "PKG-PUBDEP-11-2026",
   "corpus": "corpus",
   "manifest": {
     "kind": "pyproject",
