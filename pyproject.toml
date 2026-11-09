@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pubdeploy"
+version = "0.1.0"
+description = "The deploy walk: what a service needs before it deploys, whether it has it, and making it; and the checks a deploy to Kubernetes runs."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "David Schryer", email = "schryer@gmail.com" }]
+# PyYAML reads the manifests kustomize renders. k8s.py, which a server runs
+# as a file, needs it only for YAML.
+dependencies = ["PyYAML>=6"]
+
+[project.urls]
+Repository = "https://github.com/Sustenaut/pubdeploy"
+
+[project.scripts]
+pubdeploy = "pubdeploy.cli:main"
+
+# What pubkit calls of pubdeploy (hooks.py): its sync --check and its bump.
+[project.entry-points."sustenaut.sync"]
+pubdeploy = "pubdeploy.hooks:check"
+
+[project.entry-points."sustenaut.bump"]
+pubdeploy = "pubdeploy.hooks:bump"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pubdeploy = [
+    "schema.json",
+    "journal.json",
+    # The commit of the release's tag, which wheel.yml writes before it
+    # builds the wheel; a source tree has none (config.release_commit).
+    "release-commit",
+]
+
+# `make functional` measures the suite, the `pubdeploy` processes it starts
+# included, into coverage/coverage.xml for SonarQube Cloud.
+[tool.coverage.run]
+source = ["pubdeploy"]
+patch = ["subprocess", "execv"]
+parallel = true
+
+[tool.coverage.xml]
+output = "coverage/coverage.xml"
