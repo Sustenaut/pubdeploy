@@ -1,8 +1,8 @@
 # Walks a service's deploy block on a schedule, read-only: every need is
 # checked, the states table printed, and the journal written to storage. A
-# run with a need missing, drifted or blocked fails. `pubkit sync`, through
-# pubdeploy's sync hook, seeds the caller in a
-# repository with a deploy block:
+# run with a need missing, drifted or blocked fails. Kept for the callers
+# repositories still have, until the convergence engine walks them; nothing
+# seeds a new one. A caller is:
 #
 #   on: { schedule: [{ cron: '*/30 * * * *' }], workflow_dispatch: {} }
 #   permissions: { actions: read, contents: read, id-token: write }

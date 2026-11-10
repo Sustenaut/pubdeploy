@@ -1,0 +1,4 @@
+{
+  "category": "removed",
+  "change": "pubkit sync no longer seeds .github/workflows/deploy-check.yml: the convergence engine walks every deploy service; existing callers keep working until each repository removes its own"
+}

@@ -31,10 +31,9 @@ pubdeploy's:
 - **`sustenaut.sync`**, `check(root, config, check) -> (lines, failed)`:
   `pubkit sync` calls it after its own work, and `--check` fails when it
   says so. It is the deploy block's offline check (the block and its needs,
-  the manifests against them, the units against the deploy workflow) and,
-  without `--check`, seeds the scheduled walk's caller
-  (`.github/workflows/deploy-check.yml`). `pubdeploy sync-check [--check]`
-  runs it alone.
+  the manifests against them, the units against the deploy workflow).
+  It no longer seeds a scheduled walk's caller: the convergence engine walks
+  every deploy service. `pubdeploy sync-check [--check]` runs it alone.
 - **`sustenaut.bump`**, `bump(root) -> lines`: `pubkit bump` calls it after
   moving pubkit's own pins. It moves each `deploy.providers` wheel to its
   latest release, then this repository's uses of pubdeploy's reusable
@@ -396,8 +395,9 @@ deploy channel, with the deploy key, host and tailnet secrets k8s-deploy.yml
 takes and the environment's read-only `BWS_ACCESS_TOKEN`, with
 `--tolerate-unknown`: it fails when a need is missing, drift or blocked, and
 a need the job cannot judge, such as a secret its token may not list, stays
-unknown in the journal and fails nothing. `pubkit sync` (pubdeploy's sustenaut.sync hook) seeds its caller,
-`.github/workflows/deploy-check.yml`, in a repository with a deploy block.
+unknown in the journal and fails nothing. `pubkit sync` no longer seeds its
+caller, `.github/workflows/deploy-check.yml`: the convergence engine walks every
+deploy service, and a repository removes its caller once the engine shows it.
 And every repository with a `with-secrets.json` gets the managed
 `with-secrets`: an older copied script is why `bitwarden.*` needs were
 unknown, and `pubkit sync --check` says so.

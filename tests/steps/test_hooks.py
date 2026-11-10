@@ -10,7 +10,7 @@ from importlib.metadata import entry_points
 from pathlib import Path
 
 from pubdeploy import hooks
-from pubdeploy.scheduled import CALLER
+CALLER = ".github/workflows/deploy-check.yml"
 
 SRC = Path(__file__).resolve().parents[2] / "src" / "pubdeploy"
 WHEEL = "https://github.com/Sustenaut/pubdeploy/releases/download/v{0}/pubdeploy-{0}-py3-none-any.whl"
@@ -40,17 +40,12 @@ def test_without_a_deploy_block_the_sync_hook_says_nothing(tmp_path):
     assert hooks.check(tmp_path, {"kind": "utility"}, check=True) == ([], False)
 
 
-def test_the_sync_hook_seeds_the_caller_and_check_fails_without_it(tmp_path, monkeypatch):
+def test_the_sync_hook_seeds_no_scheduled_walk(tmp_path, monkeypatch):
     monkeypatch.setattr("pubdeploy.offline_lines", lambda root, config: ([], False))
     config = {"kind": "service", "deploy": {"namespace": "example"}}
-    lines, failed = hooks.check(tmp_path, config, check=True)
-    assert failed and lines == [f"pubdeploy: no {CALLER}, the scheduled deploy walk: `pubkit sync` seeds it"]
-    assert not (tmp_path / CALLER).exists()
-    monkeypatch.setenv("PUBDEPLOY_RELEASE_COMMIT", COMMIT)
-    assert hooks.check(tmp_path, config, check=False) == ([f"seeded   {CALLER}"], False)
-    text = (tmp_path / CALLER).read_text()
-    assert f"uses: Sustenaut/pubdeploy/.github/workflows/deploy-check.yml@{COMMIT} # v" in text
     assert hooks.check(tmp_path, config, check=True) == ([], False)
+    assert hooks.check(tmp_path, config, check=False) == ([], False)
+    assert not (tmp_path / ".github").exists()
 
 
 def test_writing_a_disagreement_is_said_and_fails_nothing(tmp_path, monkeypatch):

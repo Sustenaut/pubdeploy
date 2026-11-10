@@ -62,9 +62,8 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("types", help="every need type pubdeploy and the installed packages offer, and its keys")
     commands.add_parser("k8s", help="check the Secrets rendered manifests read before a deploy, or show "
                                     "why a rollout failed (pubdeploy k8s --help)")
-    p = commands.add_parser("sync-check", help="the deploy block's offline check, and the scheduled walk's "
-                                               "caller seeded: what pubkit sync runs")
-    p.add_argument("--check", action="store_true", help="change nothing: fail where sync would seed")
+    p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubkit sync runs")
+    p.add_argument("--check", action="store_true", help="fail when the deploy block is wrong")
     commands.add_parser("bump", help="move deploy.providers and the uses of pubdeploy's workflows to the "
                                      "latest releases: what pubkit bump runs")
     args = parser.parse_args(given)
