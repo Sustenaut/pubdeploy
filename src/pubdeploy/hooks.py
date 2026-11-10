@@ -3,8 +3,9 @@ imports nothing of the walk:
 
 - `sustenaut.sync`, `check(root, config, check) -> (lines, failed)`: the deploy
   block's offline check (the block and its needs, the manifests against
-  them, the units against the deploy workflow) and, without `check`, seeding
-  the scheduled walk's caller. `pubkit sync` calls it after its own work, and
+  them, the units against the deploy workflow). It seeds no scheduled walk:
+  the convergence engine walks every deploy service, and a repository's own
+  deploy-check.yml caller, where one is left, is its own to remove. `pubkit sync` calls it after its own work, and
   `--check` fails when it says so. `pubdeploy sync-check` runs it alone.
 - `sustenaut.bump`, `bump(root) -> lines`: each deploy.providers entry moved
   to its latest release, then this repository's uses of pubdeploy's
@@ -27,11 +28,9 @@ def check(root: Path, config: dict[str, Any], check: bool) -> tuple[list[str], b
     if BLOCK not in config:
         return [], False
     from . import offline_lines  # noqa: PLC0415
-    from .scheduled import seed  # noqa: PLC0415
     lines, failed = offline_lines(root, config)
-    seeded, missing = seed(root, config, check)
     # Writing, a disagreement is said and fails nothing, as pubkit sync goes on.
-    return lines + seeded, check and (failed or missing)
+    return lines, check and failed
 
 
 # A use of pubdeploy's reusable workflows, by commit with the version in a

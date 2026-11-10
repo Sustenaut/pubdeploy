@@ -1,7 +1,7 @@
 """Writing a walk's journal to storage: `walk --journal URL` (or PUBKIT_JOURNAL_URL).
 
 The deploy-journal/2 document is uploaded as a file of the tenant `plane`,
-then the head services/OWNER/REPO/UNIT moved to it, If-Match the head's
+then the head OWNER.REPO.UNIT moved to it, If-Match the head's
 ETag, so two walks never lose one's journal: a move another walk won is
 tried once more, on the head it left. The token is PUBKIT_STORAGE_TOKEN; in
 GitHub Actions, without it, the job's OIDC token for the storage's audience
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -22,6 +23,8 @@ from collections.abc import Mapping
 from typing import Any
 
 TENANT = "plane"
+# Storage's head names are flat and lower case: [a-z0-9][a-z0-9._-], at most 64.
+FLAT = re.compile(r"[^a-z0-9._-]")
 # Cloudflare refuses Python's default User-Agent (error 1010).
 AGENT = "pubdeploy-journal"
 
@@ -98,10 +101,15 @@ def token(url: str, env: Mapping[str, str]) -> str | None:
     return None
 
 
+def head_name(repository: str, unit: str) -> str:
+    """The unit's head: `example-org.example.api` for example-org/example's unit api."""
+    return FLAT.sub("-", f"{repository.replace('/', '.')}.{unit}".lower())[:64]
+
+
 def write(url: str, document: dict[str, Any], env: Mapping[str, str], storage: Any = None) -> str:
     """Write the journal; one line saying what was done, or why not."""
     service = document["service"]
-    path = f"services/{service['repository'] or 'unknown/unknown'}/{service['unit']}"
+    path = head_name(service["repository"] or "unknown/unknown", service["unit"])
     try:
         if storage is None:
             given = token(url, env)

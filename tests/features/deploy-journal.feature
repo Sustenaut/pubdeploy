@@ -28,16 +28,16 @@ Feature: The walk's journal, deploy-journal/2, and writing it to storage
     And no output holds a value
 
   Scenario: --journal writes the document, and moves the unit's head to it
-    Given storage holds the head "services/example-org/example/example" at "older"
+    Given storage holds the head "example-org.example.example" at "older"
     When I run pubdeploy "walk" "--journal" "https://files.example.eu"
     Then it succeeds
     And storage was given a deploy-journal/2 document as a file of "plane"
-    And the head "services/example-org/example/example" was moved If-Match "older"
-    And stderr mentions "deploy: journal file-1 written, the head services/example-org/example/example moved to it"
+    And the head "example-org.example.example" was moved If-Match "older"
+    And stderr mentions "deploy: journal file-1 written, the head example-org.example.example moved to it"
     And no output holds a value
 
   Scenario: A head another walk moved first is tried once more
-    Given storage holds the head "services/example-org/example/example" at "older"
+    Given storage holds the head "example-org.example.example" at "older"
     And another walk moves the head first, once
     When I run pubdeploy "walk" "--journal" "https://files.example.eu"
     Then it succeeds
