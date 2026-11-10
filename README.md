@@ -79,7 +79,7 @@ jobs:
   workflow `pubkit sync` writes for pushes to main; a repository whose CI
   is another workflow names it in `require`, and in `workflow_run`.
 - The `build` job checks out that commit and builds `image`, tagged with it,
-  with `actions/docker-build` (its layer cache scoped to the image's name,
+  with pubhost's `actions/docker-build` (its layer cache scoped to the image's name,
   and `build-args`), runs `check` with the image in `IMAGE`, and only then
   pushes it to GitHub's container registry with the job's token.
 - The `deploy` job runs once for each line of `deploys`: an overlay

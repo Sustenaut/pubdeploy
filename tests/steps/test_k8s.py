@@ -102,7 +102,7 @@ def step(workflow, job, uses):
 @then("its build job builds with docker-build, runs the check, then pushes to ghcr.io")
 def build_job(workflow):
     names = [s.get("uses", s.get("name", "")) for s in steps(workflow, "build")]
-    build = next(i for i, n in enumerate(names) if n.startswith("Sustenaut/pubkit/actions/docker-build@"))
+    build = next(i for i, n in enumerate(names) if n.startswith("Sustenaut/pubhost/actions/docker-build@"))
     check, push = names.index("Check the image"), names.index("Push the image")
     assert build < check < push
     check_step = steps(workflow, "build")[check]
@@ -165,7 +165,7 @@ def ready_sha(workflow):
     for job in ("build", "deploy"):
         checkout = step(workflow, job, "actions/checkout@")
         assert checkout["with"]["ref"] == READY, job
-    build = step(workflow, "build", "Sustenaut/pubkit/actions/docker-build@")
+    build = step(workflow, "build", "Sustenaut/pubhost/actions/docker-build@")
     assert build["with"]["tags"] == "${{ inputs.image }}:" + READY
     for name in ("Check the image", "Push the image"):
         s = next(s for s in steps(workflow, "build") if s.get("name") == name)
