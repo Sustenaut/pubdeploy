@@ -152,7 +152,7 @@ def test_zones_come_from_the_config_and_the_zones_file(tmp_path):
 
 
 @pytest.mark.parametrize(("env", "origin"), [({}, "laptop"), ({"GITHUB_ACTIONS": "true", "GITHUB_ACTOR": "someone"},
-                                                               "actions"), ({"PUBKIT_PLANE": "1"}, "plane")])
+                                                               "actions"), ({"PUBKIT_PLANE": "1", "PUBKIT_WALK_BY": "schedule"}, "plane")])
 def test_the_journal_says_where_the_walk_ran(tmp_path, env, origin):
     root = tmp_path / "repo"
     shutil.copytree(FIXTURE, root)
@@ -161,7 +161,7 @@ def test_the_journal_says_where_the_walk_ran(tmp_path, env, origin):
                   rendered=lambda: (root / "rendered.yaml").read_text())
     journal = deploy.check(deploy.load(root, config, ctx), ctx)
     assert journal.walk["from"] == origin
-    assert journal.walk["by"] == env.get("GITHUB_ACTOR", journal.walk["by"])
+    assert journal.walk["by"] == env.get("PUBKIT_WALK_BY", env.get("GITHUB_ACTOR", journal.walk["by"]))
 
 
 def test_a_check_that_returns_no_result_is_unknown():
@@ -288,3 +288,9 @@ def test_a_fulfil_budget_over_900_seconds_is_refused():
     kind = CronJob()
     kind.fulfil_budget = 901
     assert "its fulfil_budget must be more than 0 and at most 900 seconds" in type_problems(kind)
+
+
+def test_a_journal_head_is_a_name_storage_takes():
+    from pubdeploy.store import head_name
+    assert head_name("Example-Org/example", "api-eu") == "example-org.example.api-eu"
+    assert head_name("Some Owner/Repo", "U" * 80) == ("some-owner.repo." + "u" * 80)[:64]

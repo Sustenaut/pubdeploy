@@ -385,7 +385,7 @@ starts on `workflow_run` of main with `actions: read`, and on
 `--json` prints a deploy-journal/2 document per unit (a list for more than
 one): each need with its grade and whether it was fulfilled. `--journal URL`
 (or `PUBKIT_JOURNAL_URL`) also writes it to storage, as a file of the tenant
-`plane`, and moves the head `services/OWNER/REPO/UNIT` to it, If-Match its
+`plane`, and moves the head `OWNER.REPO.UNIT` (lower case, as storage's head names are) to it, If-Match its
 ETag, trying once more when another walk moved it first. The token is
 `PUBKIT_STORAGE_TOKEN`, or in GitHub Actions the job's OIDC token for
 `PUBKIT_STORAGE_AUDIENCE` (default the address's host). A journal that

@@ -203,7 +203,8 @@ def check(plan: Plan, ctx: Context, types: dict[str, NeedType] | None = None) ->
     from . import __version__  # noqa: PLC0415
     service = {"repository": ctx.slug, "namespace": plan.namespace, "unit": plan.unit or plan.namespace,
                "commit": git(plan.root, "rev-parse", "HEAD"), "pubdeploy": __version__}
-    by = ctx.env.get("GITHUB_ACTOR") or git(plan.root, "config", "user.email")
+    # PUBKIT_WALK_BY: who a host that walks for others (the convergence engine) says asked.
+    by = ctx.env.get("PUBKIT_WALK_BY") or ctx.env.get("GITHUB_ACTOR") or git(plan.root, "config", "user.email")
     origin = "actions" if ctx.env.get("GITHUB_ACTIONS") == "true" else (
         "plane" if ctx.env.get("PUBKIT_PLANE") else "laptop")
     return walk(plan.needs, types or registered(), ctx, service, by=by, origin=origin)
