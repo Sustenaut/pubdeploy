@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "PUBKIT_WALK_BY names who a walk is for, before GITHUB_ACTOR and git's user.email, for a host that walks for others"
-}

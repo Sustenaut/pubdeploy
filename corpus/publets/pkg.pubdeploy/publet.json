@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.2.0 is released as v0.2.0 from commit 122bdde7185d01af0ee75ec3951d2cba4aadde81.",
+      "content": "pubdeploy 0.3.0 is released as v0.3.0 from commit 9d632982685afaafd80bd3eb5451075205bab049.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.2.0",
+            "0.3.0",
             "pubdeploy --version",
-            "pubdeploy 0.2.0",
-            "v0.2.0",
-            "122bdde7185d01af0ee75ec3951d2cba4aadde81"
+            "pubdeploy 0.3.0",
+            "v0.3.0",
+            "9d632982685afaafd80bd3eb5451075205bab049"
           ]
         ]
       },
-      "scope": "the published release v0.2.0 of pubdeploy",
+      "scope": "the published release v0.3.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "122bdde7185d01af0ee75ec3951d2cba4aadde81"
+          "revision": "9d632982685afaafd80bd3eb5451075205bab049"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.2.0 was released on 2026-11-09 from commit 122bdde7185d01af0ee75ec3951d2cba4aadde81 with these changes.",
+      "content": "pubdeploy 0.3.0 was released on 2026-11-10 from commit 9d632982685afaafd80bd3eb5451075205bab049 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,28 +57,36 @@
         ],
         "rows": [
           [
-            "internal",
-            "The checks of pubdeploy's code that were left in pubkit's suite: providers.bump, a type no installed package offers, the trigger rewrite, pubsec's types without pubsec, the provider contract and the walk hook"
+            "fixed",
+            "Journals are written again: a unit's head is OWNER.REPO.UNIT, lower case, which storage takes, not services/OWNER/REPO/UNIT, which it refused as no such route"
+          ],
+          [
+            "added",
+            "PUBKIT_WALK_BY names who a walk is for, before GITHUB_ACTOR and git's user.email, for a host that walks for others"
+          ],
+          [
+            "removed",
+            "pubkit sync no longer seeds .github/workflows/deploy-check.yml: the convergence engine walks every deploy service; existing callers keep working until each repository removes its own"
           ],
           [
             "changed",
-            "k8s-deploy.yml calls pubdeploy's own deploy-ssh, at v0.1.0's commit, in place of pubkit's; the suite runs the action's test.sh; two docstrings say pubdeploy where they said pubkit"
+            "k8s-deploy.yml builds the image with pubhost's actions/docker-build at pubhost 0.1.0, by commit; the action has moved out of pubkit"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.2.0 of pubdeploy",
+      "scope": "the published release v0.3.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "122bdde7185d01af0ee75ec3951d2cba4aadde81"
+          "revision": "9d632982685afaafd80bd3eb5451075205bab049"
         }
       ]
     }
   },
-  "created": "2026-11-09T00:00:00Z",
+  "created": "2026-11-10T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
