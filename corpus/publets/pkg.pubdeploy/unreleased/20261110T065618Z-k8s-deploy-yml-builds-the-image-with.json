@@ -1,0 +1,4 @@
+{
+  "category": "changed",
+  "change": "k8s-deploy.yml builds the image with pubhost's actions/docker-build at pubhost 0.1.0, by commit; the action has moved out of pubkit"
+}

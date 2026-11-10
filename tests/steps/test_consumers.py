@@ -49,7 +49,7 @@ def consumer_names(text: str) -> set[str]:
              if not EXAMPLE_HOSTS.search(h) and h not in TOOL_HOSTS and not h.endswith(TOOL_DOMAINS)}
     for m in OWNER.finditer(text):
         word = m.group(0)
-        if word.upper().startswith("SUSTENAUT_") or word in OWNER_NAMES or text[m.start():].startswith(("Sustenaut/pubkit", "Sustenaut/pubdeploy", "Sustenaut/pubsec", "Sustenaut/integrations", "Sustenaut/pubrel")):
+        if word.upper().startswith("SUSTENAUT_") or word in OWNER_NAMES or text[m.start():].startswith(("Sustenaut/pubkit", "Sustenaut/pubdeploy", "Sustenaut/pubsec", "Sustenaut/integrations", "Sustenaut/pubrel", "Sustenaut/pubhost")):
             continue
         found.add(m.group(1))
     return found
