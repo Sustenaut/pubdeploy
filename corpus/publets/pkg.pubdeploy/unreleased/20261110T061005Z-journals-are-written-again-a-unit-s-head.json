@@ -1,4 +1,0 @@
-{
-  "category": "fixed",
-  "change": "Journals are written again: a unit's head is OWNER.REPO.UNIT, lower case, which storage takes, not services/OWNER/REPO/UNIT, which it refused as no such route"
-}
