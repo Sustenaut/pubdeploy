@@ -2,7 +2,7 @@
 and making it; and the checks a deploy to Kubernetes runs.
 
     pubdeploy walk [--fulfil] [--yes] [--unit NAME] [--kubectl CMD] [--server HOST]
-                   [--zones PATH] [--journal URL] [--json] [--offline] [--namespace NS]
+                   [--zones PATH]... [--journal URL] [--json] [--offline] [--namespace NS]
                    [--tolerate-unknown]
     pubdeploy check ...                  walk without --fulfil
     pubdeploy types                      every need type, and its keys
@@ -54,9 +54,9 @@ def main(argv: list[str] | None = None) -> int:
                             "read-only verb, 'ssh -i KEY deploy@HOST {unit} kubectl-read'")
         p.add_argument("--server", metavar="HOST", help="the admin channel: kubectl and commands over ssh root@HOST "
                                                          "(default SUSTENAUT_SERVER, without --kubectl)")
-        p.add_argument("--zones", type=Path, metavar="PATH",
-                       help="the pubkit.json, here or in a checkout beside this one, whose hosting block "
-                            "keeps the zone of the deploy's host")
+        p.add_argument("--zones", type=Path, metavar="PATH", action="append",
+                       help="a pubkit.json, here or in a checkout beside this one, whose hosting block "
+                            "keeps the zone of a unit's host; one per owner whose zones the hosts are in")
         p.add_argument("--journal", metavar="URL", help="also write the journal to storage (or PUBKIT_JOURNAL_URL)")
         p.add_argument("--namespace", metavar="NS", help="another namespace than the unit's")
     commands.add_parser("types", help="every need type pubdeploy and the installed packages offer, and its keys")
@@ -87,9 +87,10 @@ def main(argv: list[str] | None = None) -> int:
     from .config import confined  # noqa: PLC0415
     # --zones is another repository's pubkit.json, so it may be in a
     # checkout beside this one: a pubkit.json in the parent directory's tree.
-    zones = confined(args.zones, "the --zones file", also=(root.parent,)) if args.zones else None
-    if zones is not None and zones.name != "pubkit.json":
-        sys.exit(f"pubdeploy: the --zones file ({args.zones}) must be a repository's pubkit.json")
+    zones = [confined(z, "the --zones file", also=(root.parent,)) for z in args.zones or []] or None
+    for z, given in zip(zones or [], args.zones or []):
+        if z.name != "pubkit.json":
+            sys.exit(f"pubdeploy: the --zones file ({given}) must be a repository's pubkit.json")
     return run_walk(root, args.offline, args.json, args.kubectl, zones, args.namespace,
                     fulfil=getattr(args, "fulfil", False), unit=args.unit, server=args.server,
                     yes=getattr(args, "yes", False), journal_url=args.journal,

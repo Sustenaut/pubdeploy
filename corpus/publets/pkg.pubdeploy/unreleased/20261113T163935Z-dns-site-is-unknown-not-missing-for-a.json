@@ -1,0 +1,4 @@
+{
+  "category": "fixed",
+  "change": "dns.site is unknown, not missing, for a host in a zone no hosting block given holds: another owner's zones, not a site to add"
+}

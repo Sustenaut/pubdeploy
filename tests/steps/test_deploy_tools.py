@@ -151,6 +151,28 @@ def test_zones_come_from_the_config_and_the_zones_file(tmp_path):
     assert deploy.zones_of({}, None) is None
 
 
+def test_zones_come_from_each_zones_file_one_per_owner(tmp_path):
+    files = []
+    for zone in ("example.org", "example.net"):
+        f = tmp_path / f"{zone}.json"
+        f.write_text(json.dumps({"hosting": {"zones": {zone: {"sites": {}}}}}))
+        files.append(f)
+    assert set(deploy.zones_of({}, files)) == {"example.org", "example.net"}
+
+
+def test_the_walk_takes_zones_more_than_once(tmp_path, monkeypatch):
+    from pubdeploy import cli
+    for owner in ("a", "b"):
+        (tmp_path / owner).mkdir()
+        (tmp_path / owner / "pubkit.json").write_text("{}")
+    (tmp_path / "svc").mkdir()
+    monkeypatch.chdir(tmp_path / "svc")
+    seen = {}
+    monkeypatch.setattr("pubdeploy.run_walk", lambda root, offline, as_json, kubectl, zones, *a, **k: seen.setdefault("z", zones) and 0)
+    cli.main(["walk", "--zones", "../a/pubkit.json", "--zones", "../b/pubkit.json"])
+    assert [z.parent.name for z in seen["z"]] == ["a", "b"]
+
+
 @pytest.mark.parametrize(("env", "origin"), [({}, "laptop"), ({"GITHUB_ACTIONS": "true", "GITHUB_ACTOR": "someone"},
                                                                "actions"), ({"PUBKIT_PLANE": "1", "PUBKIT_WALK_BY": "schedule"}, "plane")])
 def test_the_journal_says_where_the_walk_ran(tmp_path, env, origin):

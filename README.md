@@ -244,7 +244,9 @@ HTTPS, the DNS through `dig`, and Bitwarden only as `./with-secrets` gives
 it: a Bitwarden need is looked for by name in the environment, and is
 `unknown` outside with-secrets. It never prints a value: a secret is named,
 with its length and kind. `--zones` reads only a file named `pubkit.json`, in
-this repository or a checkout beside it.
+this repository or a checkout beside it, and may be given once per owner whose
+zones the units' hosts are in. A host in a zone none of them holds is `unknown`,
+not `missing`: its owner's zones were not given.
 
 `pubkit sync --check` checks the block too, and runs the offline walk: every
 Secret the manifests read must be one a need fills, with the keys they read,

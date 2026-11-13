@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "--zones may be given more than once, one pubkit.json per owner whose zones the units' hosts are in"
+}

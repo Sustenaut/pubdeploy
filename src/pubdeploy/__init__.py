@@ -2,7 +2,7 @@
 what a service needs before it deploys, whether it has it, and making it.
 
     pubdeploy walk [--fulfil] [--yes] [--unit NAME] [--kubectl CMD] [--server HOST]
-                       [--zones PATH] [--journal URL] [--json] [--offline] [--namespace NS]
+                       [--zones PATH]... [--journal URL] [--json] [--offline] [--namespace NS]
     pubdeploy check ...                      walk without --fulfil
     pubdeploy types
 
@@ -152,11 +152,13 @@ def slug(root: Path) -> str:
     return m.group(1) if m else ""
 
 
-def zones_of(config: dict[str, Any], zones_file: Path | None) -> dict[str, Any] | None:
-    """The hosting block's zones: this repository's, and --zones's."""
+def zones_of(config: dict[str, Any], zones_file: Path | list[Path] | None) -> dict[str, Any] | None:
+    """The hosting block's zones: this repository's, and each --zones's (one per owner
+    whose zones the units' hosts are in)."""
     out: dict[str, Any] = {}
     found = False
-    for given in [config] + ([json.loads(zones_file.read_text(encoding="utf-8"))] if zones_file else []):
+    files = [] if zones_file is None else [zones_file] if isinstance(zones_file, Path) else list(zones_file)
+    for given in [config] + [json.loads(f.read_text(encoding="utf-8")) for f in files]:
         hosting = given.get("hosting") if isinstance(given, dict) else None
         if isinstance(hosting, dict) and isinstance(hosting.get("zones"), dict):
             out |= hosting["zones"]
@@ -211,7 +213,7 @@ def check(plan: Plan, ctx: Context, types: dict[str, NeedType] | None = None) ->
 
 
 def context(root: Path, config: dict[str, Any], offline: bool, kubectl_command: str | None = None,
-            zones_file: Path | None = None, namespace: str | None = None, server: str | None = None,
+            zones_file: Path | list[Path] | None = None, namespace: str | None = None, server: str | None = None,
             unit: str | None = None) -> Context:
     """The context `pubdeploy walk` runs a unit in: the real tools."""
     from .github import gh, gh_set as send  # noqa: PLC0415
@@ -290,7 +292,7 @@ def prepare(ctx: Context, plan: list[tuple[str, str]], terminal: bool, points: A
             print(said, file=sys.stderr)
 
 
-def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | None, zones: Path | None,
+def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | None, zones: Path | list[Path] | None,
              namespace: str | None, fulfil: bool = False, unit: str | None = None, server: str | None = None,
              yes: bool = False, journal_url: str | None = None, tolerate_unknown: bool = False) -> int:
     from .config import read_config  # noqa: PLC0415
@@ -366,7 +368,7 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
     return 0 if ready else 1
 
 
-def run_check(root: Path, offline: bool, as_json: bool, kubectl_command: str | None, zones: Path | None,
+def run_check(root: Path, offline: bool, as_json: bool, kubectl_command: str | None, zones: Path | list[Path] | None,
               namespace: str | None, **given: Any) -> int:
     return run_walk(root, offline, as_json, kubectl_command, zones, namespace, **given)
 
