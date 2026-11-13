@@ -1125,3 +1125,8 @@ def token_file(world, monkeypatch):
 @then("the hook was called without a terminal")
 def hook_without_terminal(world):
     assert world.hook_terminal and not any(world.hook_terminal), world.hook_terminal
+
+
+@given("the cluster's objects were applied client-side")
+def client_side(world):
+    world.cluster["client_side_owned"] = True

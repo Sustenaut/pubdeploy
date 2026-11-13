@@ -142,9 +142,11 @@ class FakeKubectl:
         if space is None:
             return Ran(1, "", f'Error from server (NotFound): namespaces "{ns}" not found')
         if verb == "diff":
+            if self.state.get("client_side_owned") and "--force-conflicts" not in rest:
+                return Ran(2, "", 'error: Apply failed with 1 conflict: conflict with "kubectl-client-side-apply"')
             return Ran(self.state.get("diff_code", 0), self.state.get("diff_out", ""), self.state.get("diff_err", ""))
         if verb == "apply":
-            assert rest == ["-f", "-"] and input is not None, rest
+            assert rest in (["-f", "-"], ["--server-side", "--force-conflicts", "-f", "-"]) and input is not None, rest
             out = []
             for doc in yaml.safe_load_all(input.decode()):
                 if doc.get("kind") == "Secret":

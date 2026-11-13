@@ -167,7 +167,7 @@ class Manifests(Base):
             groups.setdefault((doc.get("metadata") or {}).get("namespace") or ctx.namespace, []).append(doc)
         applied = 0
         for ns, group in groups.items():
-            ran = ctx.kubectl(["-n", ns, "apply", "-f", "-"],
+            ran = ctx.kubectl(["-n", ns, "apply", "--server-side", "--force-conflicts", "-f", "-"],
                               input=yaml.safe_dump_all(group, sort_keys=False).encode())
             if ran.returncode != 0:
                 return failed(f"kubectl apply -f {path} failed", ran)
@@ -206,14 +206,16 @@ class Manifests(Base):
         for doc in docs:
             groups.setdefault((doc.get("metadata") or {}).get("namespace") or ctx.namespace, []).append(doc)
         for ns, group in groups.items():
-            ran = ctx.kubectl(["-n", ns, "diff", "--server-side", "-f", "-"],
+            # --force-conflicts: objects applied client-side have their fields owned by kubectl's
+            # client-side apply; a dry run takes them over in its answer and writes nothing.
+            ran = ctx.kubectl(["-n", ns, "diff", "--server-side", "--force-conflicts", "-f", "-"],
                               input=yaml.safe_dump_all(group, sort_keys=False).encode())
             if ran.returncode == 1:
                 changed = sorted({line.split()[1].rsplit("/", 1)[0] for line in ran.stdout.splitlines()
                                   if line.startswith("diff -u") and len(line.split()) > 1})
                 return Result("drift", f"{path} differs from what is in the cluster"
                                        + (f" ({len(changed)} object{'s' * (len(changed) != 1)})" if changed else ""),
-                              fix=f"kubectl apply -f {path}, as an admin")
+                              fix=f"kubectl apply --server-side --force-conflicts -f {path}, as an admin")
             if ran.returncode != 0:
                 said = (ran.stderr.strip().splitlines() or [f"exit {ran.returncode}"])[-1][:200]
                 return Result("unknown", f"the objects in {path} are there; whether they match it could not be "
