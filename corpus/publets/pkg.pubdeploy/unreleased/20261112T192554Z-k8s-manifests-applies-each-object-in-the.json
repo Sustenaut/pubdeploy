@@ -1,4 +1,0 @@
-{
-  "category": "fixed",
-  "change": "k8s.manifests applies each object in the namespace it names, and the rest in the unit's: kubectl refused a file of RoleBindings for several namespaces under -n NS"
-}

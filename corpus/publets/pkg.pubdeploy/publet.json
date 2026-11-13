@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.3.0 is released as v0.3.0 from commit 9d632982685afaafd80bd3eb5451075205bab049.",
+      "content": "pubdeploy 0.3.1 is released as v0.3.1 from commit 9c49cdd0ed97bc5604e738f44e4c4a3e28b01842.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.3.0",
+            "0.3.1",
             "pubdeploy --version",
-            "pubdeploy 0.3.0",
-            "v0.3.0",
-            "9d632982685afaafd80bd3eb5451075205bab049"
+            "pubdeploy 0.3.1",
+            "v0.3.1",
+            "9c49cdd0ed97bc5604e738f44e4c4a3e28b01842"
           ]
         ]
       },
-      "scope": "the published release v0.3.0 of pubdeploy",
+      "scope": "the published release v0.3.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "9d632982685afaafd80bd3eb5451075205bab049"
+          "revision": "9c49cdd0ed97bc5604e738f44e4c4a3e28b01842"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.3.0 was released on 2026-11-10 from commit 9d632982685afaafd80bd3eb5451075205bab049 with these changes.",
+      "content": "pubdeploy 0.3.1 was released on 2026-11-13 from commit 9c49cdd0ed97bc5604e738f44e4c4a3e28b01842 with these changes.",
       "data": {
         "columns": [
           {
@@ -58,35 +58,31 @@
         "rows": [
           [
             "fixed",
-            "Journals are written again: a unit's head is OWNER.REPO.UNIT, lower case, which storage takes, not services/OWNER/REPO/UNIT, which it refused as no such route"
+            "k8s.manifests applies each object in the namespace it names, and the rest in the unit's: kubectl refused a file of RoleBindings for several namespaces under -n NS"
           ],
           [
-            "added",
-            "PUBKIT_WALK_BY names who a walk is for, before GITHUB_ACTOR and git's user.email, for a host that walks for others"
+            "fixed",
+            "k8s.namespace over the admin channel is missing without the deploy user's kubeconfig on the server, which the server's deploy command needs: the convergence engine's walk found its namespace ready, and its deploy failed with no app"
           ],
           [
-            "removed",
-            "pubkit sync no longer seeds .github/workflows/deploy-check.yml: the convergence engine walks every deploy service; existing callers keep working until each repository removes its own"
-          ],
-          [
-            "changed",
-            "k8s-deploy.yml builds the image with pubhost's actions/docker-build at pubhost 0.1.0, by commit; the action has moved out of pubkit"
+            "fixed",
+            "auth.sign-in-client checks that this site's redirect and logout URIs and role are on the domain's shared client (register-app.py --site-status), and fulfil adds them before making the Secret: a second site of a domain was ready without them, and its sign-in failed with Invalid parameter: redirect_uri"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.3.0 of pubdeploy",
+      "scope": "the published release v0.3.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "9d632982685afaafd80bd3eb5451075205bab049"
+          "revision": "9c49cdd0ed97bc5604e738f44e4c4a3e28b01842"
         }
       ]
     }
   },
-  "created": "2026-11-10T00:00:00Z",
+  "created": "2026-11-13T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
