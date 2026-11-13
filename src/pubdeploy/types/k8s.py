@@ -62,6 +62,12 @@ class Namespace(Base):
                 return kubectl_refused(ran, ns, f"{kind}s")
             if ran.returncode != 0:
                 missing.append(f"{kind} deploy")
+        if ctx.channel == "admin":
+            # The server's deploy command refuses an app without the deploy user's kubeconfig,
+            # which sustenaut-app writes last: the cluster's objects alone are not enough.
+            ran = ctx.server(["test", "-f", f"/home/deploy/.kube/{ns}"], None)
+            if ran.returncode != 0:
+                missing.append(f"deploy kubeconfig (/home/deploy/.kube/{ns} on the server)")
         if missing:
             return Result("missing", f"namespace {ns} has no {', '.join(missing)}", fix=fix)
         return Result("ready", f"namespace {ns} is there, with the deploy service account and its role")
@@ -148,11 +154,23 @@ class Manifests(Base):
             text = (Path(ctx.root) / path).read_bytes()
         except OSError as e:
             return Result("missing", f"{path} cannot be read", fix=type(e).__name__)
-        ran = ctx.kubectl(["-n", ctx.namespace, "apply", "-f", "-"], input=text)
-        if ran.returncode != 0:
-            return failed(f"kubectl apply -f {path} failed", ran)
-        return Result("ready", f"applied {path}: {len(ran.stdout.splitlines())} object"
-                               f"{'s' * (len(ran.stdout.splitlines()) != 1)}")
+        try:
+            docs = k8s.documents(text.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError, SystemExit, yaml.YAMLError) as e:
+            return Result("drift", f"{path} cannot be read as manifests", fix=type(e).__name__)
+        # An object that names its namespace is applied there, the rest in the unit's:
+        # kubectl refuses -n NS for an object of another namespace.
+        groups: dict[str, list[Any]] = {}
+        for doc in docs:
+            groups.setdefault((doc.get("metadata") or {}).get("namespace") or ctx.namespace, []).append(doc)
+        applied = 0
+        for ns, group in groups.items():
+            ran = ctx.kubectl(["-n", ns, "apply", "-f", "-"],
+                              input=yaml.safe_dump_all(group, sort_keys=False).encode())
+            if ran.returncode != 0:
+                return failed(f"kubectl apply -f {path} failed", ran)
+            applied += len(ran.stdout.splitlines())
+        return Result("ready", f"applied {path}: {applied} object{'s' * (applied != 1)}")
 
     def files(self, params: dict[str, Any]) -> list[str]:
         return [params["path"]] if isinstance(params.get("path"), str) else []

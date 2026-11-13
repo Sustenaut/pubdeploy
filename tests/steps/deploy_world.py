@@ -188,7 +188,12 @@ class FakeServer:
                                                          "objects": set()})
             for kind in ("serviceaccount", "role", "rolebinding"):
                 w.cluster["namespaces"][args[1]][kind].add("deploy")
+            w.cluster.setdefault("kubeconfigs", set()).add(args[1])
             return Ran(0, f"namespace {args[1]} ready")
+        if args[:2] == ["test", "-f"] and args[2].startswith("/home/deploy/.kube/"):
+            ns = args[2].rsplit("/", 1)[1]
+            known = w.cluster.get("kubeconfigs")
+            return Ran(0 if known is None or ns in known else 1, "")
         if args[:3] == ["python3", "-I", "-"] and "--status" in args:
             return Ran(0, json.dumps(w.auth))
         if args[:3] == ["python3", "-I", "-"] and "--site-status" in args:
