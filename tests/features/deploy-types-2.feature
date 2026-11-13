@@ -73,6 +73,33 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     And "k8s.secret:example-oidc" is ready
     And no output holds a value
 
+  Scenario: A registered client that lacks this site's redirect is missing, and the walk adds it
+    Given the service signs in with a client of example.eu
+    And the client is "registered"
+    And the Secret "example-oidc" holds the client
+    And the client lacks this site's redirect
+    When I run pubdeploy "walk"
+    Then "auth.sign-in-client:example" is missing, "the example.eu client lacks this site's redirect"
+    When I run pubdeploy "walk" "--fulfil" "--yes"
+    Then "auth.sign-in-client:example" is ready, "(fulfilled)"
+    And it prints "this site is on the client"
+
+  Scenario: A registered client that lacks this site's role is missing
+    Given the service signs in with a client of example.eu
+    And the client is "registered"
+    And the Secret "example-oidc" holds the client
+    And the client lacks this site's role
+    When I run pubdeploy "walk"
+    Then "auth.sign-in-client:example" is missing, "the example.eu client lacks this site's role example"
+
+  Scenario: Without the client's state on the server whether this site is on it is unknown
+    Given the service signs in with a client of example.eu
+    And the client is "registered"
+    And the Secret "example-oidc" holds the client
+    And the client cannot be read for this site
+    When I run pubdeploy "walk"
+    Then "auth.sign-in-client:example" is unknown, "could not be read: no registration"
+
   Scenario: A client waiting for its approval record has the record written into the approvals file
     Given the service signs in with a client of example.eu
     And the client is "waiting", with the record "_example-auth.example.eu" "approve-example"

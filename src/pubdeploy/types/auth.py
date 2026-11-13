@@ -117,6 +117,9 @@ class SignInClient(Base):
                           fix=f"the approval record is waiting: add it to {approvals or 'the approvals file'} and apply",
                           details=[f"record {record.get('name', '?')} TXT"],
                           fixable=bool(approvals) and (Path(ctx.root) / approvals).is_file(), step="record")
+        site = self.site(need, ctx)
+        if site.state != "ready":
+            return site
         # The Secret is read by k8s.secret, pubsec's, which alone reads a Secret's values.
         reader = ctx.types.get("k8s.secret")
         if reader is None:
@@ -130,10 +133,28 @@ class SignInClient(Base):
                           fix=f"run the walk with --fulfil, which makes it on the server", step="push")
         return held
 
+    def site(self, need: Need, ctx: Context) -> Result:
+        """Whether this site's redirect and logout URIs and role are on the registered
+        client (register-app.py --site-status): every site of a domain shares one."""
+        ran = ctx.server(self.argv(need, ctx, "--site-status"), self.script(need, ctx).read_bytes())
+        lines = [line for line in ran.stdout.splitlines() if line.strip()]
+        if ran.returncode == 0:
+            return Result("ready", "this site is on the client")
+        if ran.returncode == 1:
+            gone = [line.rsplit(":", 1)[0] for line in lines if line.endswith(": missing")]
+            return Result("missing", f"the {need.params['domain']} client lacks this site's {', '.join(gone)}",
+                          fix="run the walk with --fulfil, which adds them to the client on the server", step="site")
+        said = (lines or ran.stderr.strip().splitlines() or [f"exit {ran.returncode}"])[-1][:300]
+        return Result("unknown", f"whether this site is on the client could not be read: {said}",
+                      fix="./with-secrets ./pubdeploy walk --fulfil --server HOST, from a laptop with the auth checkout")
+
     def action(self, need: Need, ctx: Context) -> str:
         approvals = need.params.get("approvals")
         if ctx.results.get(need.id, Result("ready", "")).step == "record":
             return f"write the approval record into {approvals}, for a pull request there"
+        if ctx.results.get(need.id, Result("ready", "")).step == "site":
+            return (f"add this site's redirect and role to the {need.params['domain']} client on the server, "
+                    f"then make Secret {(secret_of(need) or {}).get('name')}")
         return f"make Secret {(secret_of(need) or {}).get('name')} on the server, from the client kept there"
 
     def fulfil(self, need: Need, ctx: Context) -> Result:
@@ -144,13 +165,21 @@ class SignInClient(Base):
             return self.record(need, ctx, found)
         if found["status"] != "registered":
             return Result("missing", "the client is not registered", fix="see the check's fix")
+        if self.site(need, ctx).state == "missing":
+            # The site's step: its URIs and roles added to the client the domain's sites share.
+            ran = ctx.server(self.argv(need, ctx), self.script(need, ctx).read_bytes())
+            if ran.returncode != 0:
+                return failed("this site could not be added to the client on the server", ran)
         secret = (secret_of(need) or {})["name"]
         ran = ctx.server(["python3", "-I", "-", f"{need.params['state']}/client.json", secret, ctx.namespace],
                          SECRET_SCRIPT)
         if ran.returncode != 0:
             return failed(f"Secret {secret} was not made on the server", ran)
-        return Result("ready", f"made Secret {secret} in {ctx.namespace} on the server, from the client kept there",
-                      details=restart(ctx, secret))
+        site = self.site(need, ctx)  # read again, so the journal says ready from what the client holds
+        if site.state != "ready":
+            return Result(site.state, f"made Secret {secret}, but {site.summary}", fix=site.fix)
+        return Result("ready", f"made Secret {secret} in {ctx.namespace} on the server, from the client kept there; "
+                               "this site is on the client", details=restart(ctx, secret))
 
     def record(self, need: Need, ctx: Context, found: dict[str, Any]) -> Result:
         """The approval record, written into the approvals file, as register-client.sh does."""

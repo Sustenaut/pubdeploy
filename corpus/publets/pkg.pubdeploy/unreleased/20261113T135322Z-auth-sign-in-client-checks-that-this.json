@@ -1,0 +1,4 @@
+{
+  "category": "fixed",
+  "change": "auth.sign-in-client checks that this site's redirect and logout URIs and role are on the domain's shared client (register-app.py --site-status), and fulfil adds them before making the Secret: a second site of a domain was ready without them, and its sign-in failed with Invalid parameter: redirect_uri"
+}

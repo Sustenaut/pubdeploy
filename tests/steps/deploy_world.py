@@ -191,6 +191,16 @@ class FakeServer:
             return Ran(0, f"namespace {args[1]} ready")
         if args[:3] == ["python3", "-I", "-"] and "--status" in args:
             return Ran(0, json.dumps(w.auth))
+        if args[:3] == ["python3", "-I", "-"] and "--site-status" in args:
+            if w.site is None:
+                return Ran(2, "no registration: /root/.config/example-auth/team/client.json is not there")
+            given = {args[i]: args[i + 1] for i in range(len(args) - 1) if args[i] in ("--redirect", "--logout", "--role")}
+            lines = [f"{kind} {given['--' + kind]}: {'present' if kind in w.site else 'missing'}"
+                     for kind in ("redirect", "logout", "role")]
+            return Ran(0 if all(k in w.site for k in ("redirect", "logout", "role")) else 1, "\n".join(lines))
+        if args[:3] == ["python3", "-I", "-"] and "--redirect" in args:
+            w.site = {"redirect", "logout", "role"}
+            return Ran(0, json.dumps({"status": "ok", "client_id": "example.eu"}))
         if args[:3] == ["python3", "-I", "-"] and args[3].endswith("/client.json"):
             assert input is not None and b"k3s" in input and len(args) == 6, args
             name, ns = args[4], args[5]
@@ -327,6 +337,8 @@ class World:
         self.channel = "plain"
         self.admin = True  # a command runs on the server
         self.auth: dict[str, Any] = {"status": "registered"}
+        # What register-app.py --site-status finds of this site on the client; None: unreadable.
+        self.site: set[str] | None = {"redirect", "logout", "role"}
         self.written: dict[str, str] = {}  # what the Bitwarden writer was given
         self.bitwarden_refuses = False
         self.token = f"{CANARY}-write-token"
