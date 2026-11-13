@@ -106,6 +106,10 @@ class Site(Base):
             return Result("unknown", f"no hosting block says where {host} is",
                           fix="give --zones PATH, the pubkit.json whose hosting block keeps the zone")
         zone = site_of(host, ctx.zones)
+        if zone is None and not any(host == z or host.endswith(f".{z}") for z in ctx.zones):
+            # No zone given holds it: the zones of another owner, not a site missing.
+            return Result("unknown", f"no hosting block given has a zone for {host}",
+                          fix="give --zones PATH again, the pubkit.json whose hosting block keeps its zone")
         if zone is None:
             return Result("missing", f"{host} is no site of a zone in the hosting block",
                           fix="add it to the sites of its zone in the hosting block")

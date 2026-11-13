@@ -106,6 +106,12 @@ Feature: pubkit deploy check --offline checks what needs no network
     Then the exit code is 1
     And it prints "missing dns.site:other.example.eu  other.example.eu is no site of a zone in the hosting block"
 
+  Scenario: A host in a zone no hosting block given holds is unknown, not missing
+    Given the deploy block's "host" is "app.example.org"
+    When I run pubdeploy "check" "--offline"
+    Then the exit code is 1
+    And it prints "unknown dns.site:app.example.org  no hosting block given has a zone for app.example.org"
+
   Scenario: --offline exits 0 when the offline needs are ready, whatever the online ones would find
     Given kubectl may not read anything
     And GitHub refuses every request
