@@ -296,6 +296,25 @@ def test_a_journal_head_is_a_name_storage_takes():
     assert head_name("Some Owner/Repo", "U" * 80) == ("some-owner.repo." + "u" * 80)[:64]
 
 
+def test_a_namespace_without_the_deploy_kubeconfig_is_missing_over_the_admin_channel(tmp_path):
+    from pubdeploy.model import Need, Ran
+    from pubdeploy.types.k8s import Namespace
+
+    def kubectl(args, input=None):  # noqa: A002
+        return Ran(0, '{"metadata": {"name": "x"}}', "")
+    asked = []
+
+    def server(args, input=None):  # noqa: A002
+        asked.append(args)
+        return Ran(1, "", "")
+    ctx = Context(root=tmp_path, config={}, block={}, namespace="app", kubectl=kubectl, server=server,
+                  channel="admin", env={"SUSTENAUT_SERVER": "host"})
+    result = Namespace().check(Need(type="k8s.namespace", name="app", params={}), ctx)
+    assert result.state == "missing"
+    assert "deploy kubeconfig (/home/deploy/.kube/app on the server)" in result.summary
+    assert result.fix == "ssh root@host sustenaut-app app"
+    assert asked == [["test", "-f", "/home/deploy/.kube/app"]]
+
 def test_manifests_apply_each_object_in_its_own_namespace(tmp_path):
     from pubdeploy.model import Need, Ran
     from pubdeploy.types.k8s import Manifests

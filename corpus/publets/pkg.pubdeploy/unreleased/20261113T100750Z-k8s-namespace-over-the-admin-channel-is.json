@@ -1,0 +1,4 @@
+{
+  "category": "fixed",
+  "change": "k8s.namespace over the admin channel is missing without the deploy user's kubeconfig on the server, which the server's deploy command needs: the convergence engine's walk found its namespace ready, and its deploy failed with no app"
+}
