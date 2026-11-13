@@ -825,6 +825,16 @@ def client_is(world, status):
     world.auth = {"status": status}
 
 
+@given(parsers.re(r'the client lacks this site.s (?P<what>redirect|role)$'))
+def client_lacks(world, what):
+    world.site = {"redirect", "logout", "role"} - {what} - ({"logout"} if what == "redirect" else set())
+
+
+@given("the client cannot be read for this site")
+def client_unreadable(world):
+    world.site = None
+
+
 @given(parsers.parse('the client is "waiting", with the record "{name}" "{value}"'))
 def client_waits(world, name, value):
     world.auth = {"status": "waiting", "record": {"name": name, "value": value}}
@@ -838,8 +848,10 @@ def holds_client(world, secret):
 
 @then(parsers.parse('register-app.py came on the server\'s standard input, with "{flag}"'))
 def script_on_stdin(world, flag):
-    runs = [(argv, given) for argv, given in world.calls["server"] if argv[:3] == ["python3", "-I", "-"]]
-    assert runs and all(given == b"print('the registration')\n" and flag in argv for argv, given in runs), runs
+    runs = [(argv, given) for argv, given in world.calls["server"] if argv[:3] == ["python3", "-I", "-"]
+            and argv[3] == "--state-dir"]
+    assert runs and all(given == b"print('the registration')\n" for _, given in runs), runs
+    assert any(flag in argv for argv, _ in runs), runs
 
 
 @then(parsers.parse('the approvals file holds "{value}"'))
