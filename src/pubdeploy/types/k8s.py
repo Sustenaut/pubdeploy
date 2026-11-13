@@ -62,6 +62,12 @@ class Namespace(Base):
                 return kubectl_refused(ran, ns, f"{kind}s")
             if ran.returncode != 0:
                 missing.append(f"{kind} deploy")
+        if ctx.channel == "admin":
+            # The server's deploy command refuses an app without the deploy user's kubeconfig,
+            # which sustenaut-app writes last: the cluster's objects alone are not enough.
+            ran = ctx.server(["test", "-f", f"/home/deploy/.kube/{ns}"], None)
+            if ran.returncode != 0:
+                missing.append(f"deploy kubeconfig (/home/deploy/.kube/{ns} on the server)")
         if missing:
             return Result("missing", f"namespace {ns} has no {', '.join(missing)}", fix=fix)
         return Result("ready", f"namespace {ns} is there, with the deploy service account and its role")
