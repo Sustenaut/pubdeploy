@@ -314,3 +314,30 @@ def test_a_namespace_without_the_deploy_kubeconfig_is_missing_over_the_admin_cha
     assert "deploy kubeconfig (/home/deploy/.kube/app on the server)" in result.summary
     assert result.fix == "ssh root@host sustenaut-app app"
     assert asked == [["test", "-f", "/home/deploy/.kube/app"]]
+
+def test_manifests_apply_each_object_in_its_own_namespace(tmp_path):
+    from pubdeploy.model import Need, Ran
+    from pubdeploy.types.k8s import Manifests
+    (tmp_path / "admin.yaml").write_text(
+        "kind: ClusterRole\nmetadata: {name: reader}\n---\n"
+        "kind: RoleBinding\nmetadata: {name: read, namespace: one}\n---\n"
+        "kind: RoleBinding\nmetadata: {name: read, namespace: two}\n---\n"
+        "kind: NetworkPolicy\nmetadata: {name: only}\n")
+    calls = []
+
+    def kubectl(args, input=None):  # noqa: A002
+        calls.append((args, input.decode()))
+        return Ran(0, "configured\n" * input.decode().count("kind:"), "")
+    ctx = Context(root=tmp_path, config={}, block={}, namespace="unit", kubectl=kubectl, env={})
+    result = Manifests().fulfil(Need(type="k8s.manifests", name="admin.yaml", params={"path": "admin.yaml"}), ctx)
+    assert result.state == "ready" and result.summary == "applied admin.yaml: 4 objects"
+    assert [args[:2] for args, _ in calls] == [["-n", "unit"], ["-n", "one"], ["-n", "two"]]
+    assert "ClusterRole" in calls[0][1] and "NetworkPolicy" in calls[0][1]
+
+
+def test_manifests_that_do_not_parse_are_not_applied(tmp_path):
+    from pubdeploy.model import Need
+    from pubdeploy.types.k8s import Manifests
+    (tmp_path / "bad.yaml").write_text("kind: [\n")
+    ctx = Context(root=tmp_path, config={}, block={}, namespace="unit", env={})
+    assert Manifests().fulfil(Need(type="k8s.manifests", name="bad.yaml", params={"path": "bad.yaml"}), ctx).state == "drift"
