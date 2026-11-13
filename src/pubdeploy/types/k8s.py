@@ -5,7 +5,9 @@ nothing of this package's. k8s.secret, which reads a Secret's values and
 makes one from Bitwarden's, is pubsec's.
 
 A fulfil writes through the kubectl channel or runs on the server, so each
-needs the admin channel or the plane."""
+needs the admin channel or the plane; k8s.namespace's, which runs sustenaut-app
+on the server, the admin channel alone (on the plane it stays a laptop step until
+the deploy channel no longer needs the node's kubeconfig)."""
 
 from __future__ import annotations
 

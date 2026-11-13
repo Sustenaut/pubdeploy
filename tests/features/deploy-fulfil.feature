@@ -151,7 +151,7 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
     Given the namespace "example" is not in the cluster
     And no command runs on the server
     When I run pubdeploy "walk" "--fulfil" "--yes"
-    Then "k8s.namespace:example" is unknown, "not fulfilled: needs the admin channel (--server HOST) or the plane"
+    Then "k8s.namespace:example" is unknown, "not fulfilled: needs the admin channel (--server HOST), the one that runs commands on the server"
 
   Scenario: The gate off with every need before it ready is set on, and the workflow run
     Given the variable "DEPLOY_EXAMPLE" is "off"
