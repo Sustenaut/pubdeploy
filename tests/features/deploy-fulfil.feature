@@ -107,6 +107,17 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
       | the walk has no terminal        |
       | the walk runs in GitHub Actions |
 
+  Scenario: Without a terminal, a write token file brings the hook in, and the needs are fulfilled
+    Given Bitwarden has no "example-cookie-secret"
+    And the Secret "example-page-secrets" is not in the cluster
+    And the walk has no terminal
+    And PUBSEC_WRITE_TOKEN_FILE names the write token's file
+    When I run pubdeploy "walk" "--fulfil" "--yes"
+    Then the write token was never asked for
+    And the hook was called without a terminal
+    And "bitwarden.generated:example-cookie-secret" is ready, "(fulfilled)"
+    And "k8s.secret:example-page-secrets" is ready, "(fulfilled)"
+
   Scenario: A fulfil that fails keeps its state, says why, and the walk goes on
     Given the Secret "example-files" is not in the cluster
     And kubectl may write nothing

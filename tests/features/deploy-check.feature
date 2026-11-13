@@ -19,6 +19,17 @@ Feature: pubkit deploy check walks every need, and changes nothing
     And it prints "ready   upstream:storage  storage answers 200 at /healthz in"
     And it prints "deploy: 18 needs, 18 ready, 0 missing, 0 drift, 0 blocked, 0 unknown"
 
+  Scenario: Manifests applied but changed since are drift, from a server-side dry run
+    Given the cluster's objects differ from the manifests
+    When I run pubdeploy "check"
+    Then "k8s.manifests:k8s/admin/network-policy.yaml" is drift, "differs from what is in the cluster (1 object)"
+    And it prints "kubectl apply -f k8s/admin/network-policy.yaml, as an admin"
+
+  Scenario: A dry run the channel may not make leaves the manifests unknown, never ready
+    Given the cluster refuses a server-side dry run
+    When I run pubdeploy "check"
+    Then "k8s.manifests:k8s/admin/network-policy.yaml" is unknown, "whether they match it could not be compared"
+
   Scenario: Without the namespace every k8s need waits for it, and the GitHub needs stay ready
     Given the namespace "example" is not in the cluster
     When I run pubdeploy "check"

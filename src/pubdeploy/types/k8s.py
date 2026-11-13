@@ -199,7 +199,25 @@ class Manifests(Base):
         if missing:
             return Result("missing", f"{', '.join(missing)} from {path} {'is' if len(missing) == 1 else 'are'} "
                                      f"not in {ctx.namespace}", fix=f"kubectl apply -f {path}, as an admin")
-        return Result("ready", f"the {len(objects)} object{'s' * (len(objects) != 1)} in {path} are applied")
+        # There, but as the file says? A server-side dry run, authorised as the apply would be.
+        groups: dict[str, list[Any]] = {}
+        for doc in docs:
+            groups.setdefault((doc.get("metadata") or {}).get("namespace") or ctx.namespace, []).append(doc)
+        for ns, group in groups.items():
+            ran = ctx.kubectl(["-n", ns, "diff", "--server-side", "-f", "-"],
+                              input=yaml.safe_dump_all(group, sort_keys=False).encode())
+            if ran.returncode == 1:
+                changed = sorted({line.split()[1].rsplit("/", 1)[0] for line in ran.stdout.splitlines()
+                                  if line.startswith("diff -u") and len(line.split()) > 1})
+                return Result("drift", f"{path} differs from what is in the cluster"
+                                       + (f" ({len(changed)} object{'s' * (len(changed) != 1)})" if changed else ""),
+                              fix=f"kubectl apply -f {path}, as an admin")
+            if ran.returncode != 0:
+                said = (ran.stderr.strip().splitlines() or [f"exit {ran.returncode}"])[-1][:200]
+                return Result("unknown", f"the objects in {path} are there; whether they match it could not be "
+                                         f"compared: {said}", fix="run the walk over the admin channel")
+        return Result("ready", f"the {len(objects)} object{'s' * (len(objects) != 1)} in {path} are applied, "
+                               "as the file says")
 
 
 DURATION = {"type": "string", "pattern": r"^[1-9][0-9]*[mhd]$", "x-phrase": "must be a duration: minutes, hours "

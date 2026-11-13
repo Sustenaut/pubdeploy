@@ -304,7 +304,7 @@ does, type by type:
 | type | its fulfil | it needs |
 | --- | --- | --- |
 | k8s.namespace | `sustenaut-app NS` on the server | the admin channel |
-| k8s.manifests | `kubectl apply -f -` of the file | kubectl that writes |
+| k8s.manifests | `kubectl apply -f -` of the file, each object in the namespace it names; its check also runs `kubectl diff --server-side`, so an object there but changed is drift, and a dry run the channel may not make is unknown | kubectl that writes |
 | k8s.cronjob, service.health | a Job from the CronJob, waited for; a Job made by hand, NAME-pubkit-... or NAME-now, counts as the CronJob's success, as kubectl does not make it the CronJob's | kubectl that writes |
 | github.gate | the gate set on, once every need before it is ready, and the workflow run | gh |
 | deploy.rollout | the workflow run on the default branch, and waited for | gh |
