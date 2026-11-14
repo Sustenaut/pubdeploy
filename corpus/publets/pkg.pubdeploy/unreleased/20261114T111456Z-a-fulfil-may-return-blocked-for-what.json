@@ -1,0 +1,4 @@
+{
+  "category": "changed",
+  "change": "A fulfil may return blocked, for what only someone else can change (a grant, say): the walk records the need as blocked with the fulfil's fix, rather than keeping its check's state"
+}
