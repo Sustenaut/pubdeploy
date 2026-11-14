@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "A walk without a terminal calls the sustenaut.walk hook when PUBSEC_WRITE_TOKEN_FILE is set, so pubsec can read the write token from that file (the convergence engine's Fulfil)"
+}

@@ -1093,3 +1093,40 @@ def job_completed(world, job, hours):
 @then(parsers.parse('it does not print "{text}"'))
 def not_printed(world, text):
     assert text not in world.stdout, world.stdout
+
+
+@given("the cluster's objects differ from the manifests")
+def objects_differ(world):
+    world.cluster["diff_code"] = 1
+    world.cluster["diff_out"] = ("diff -u -N /tmp/LIVE/networking.k8s.io.v1.NetworkPolicy.example.page-only "
+                                 "/tmp/MERGED/networking.k8s.io.v1.NetworkPolicy.example.page-only\n-  a\n+  b\n")
+
+
+@given("the cluster refuses a server-side dry run")
+def dry_run_refused(world):
+    world.cluster["diff_code"] = 2
+    world.cluster["diff_err"] = 'Error from server (Forbidden): cannot patch resource "networkpolicies"'
+
+
+@given("PUBSEC_WRITE_TOKEN_FILE names the write token's file")
+def token_file(world, monkeypatch):
+    import pubsec.walk  # noqa: PLC0415
+    from deploy_world import FakeWriter  # noqa: PLC0415
+    world.env["PUBSEC_WRITE_TOKEN_FILE"] = "/var/run/secrets/bitwarden-write/token"
+    world.hook_terminal = []
+
+    def prepare(ctx, plan, terminal):  # as pubsec's, which reads the file without a terminal
+        world.hook_terminal.append(terminal)
+        if not terminal and ctx.env.get("PUBSEC_WRITE_TOKEN_FILE"):
+            ctx.bitwarden_writer = FakeWriter(world, world.token)
+    monkeypatch.setattr(pubsec.walk, "prepare", prepare)
+
+
+@then("the hook was called without a terminal")
+def hook_without_terminal(world):
+    assert world.hook_terminal and not any(world.hook_terminal), world.hook_terminal
+
+
+@given("the cluster's objects were applied client-side")
+def client_side(world):
+    world.cluster["client_side_owned"] = True

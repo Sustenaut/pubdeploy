@@ -107,6 +107,17 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
       | the walk has no terminal        |
       | the walk runs in GitHub Actions |
 
+  Scenario: Without a terminal, a write token file brings the hook in, and the needs are fulfilled
+    Given Bitwarden has no "example-cookie-secret"
+    And the Secret "example-page-secrets" is not in the cluster
+    And the walk has no terminal
+    And PUBSEC_WRITE_TOKEN_FILE names the write token's file
+    When I run pubdeploy "walk" "--fulfil" "--yes"
+    Then the write token was never asked for
+    And the hook was called without a terminal
+    And "bitwarden.generated:example-cookie-secret" is ready, "(fulfilled)"
+    And "k8s.secret:example-page-secrets" is ready, "(fulfilled)"
+
   Scenario: A fulfil that fails keeps its state, says why, and the walk goes on
     Given the Secret "example-files" is not in the cluster
     And kubectl may write nothing
@@ -140,7 +151,7 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
     Given the namespace "example" is not in the cluster
     And no command runs on the server
     When I run pubdeploy "walk" "--fulfil" "--yes"
-    Then "k8s.namespace:example" is unknown, "not fulfilled: needs the admin channel (--server HOST) or the plane"
+    Then "k8s.namespace:example" is unknown, "not fulfilled: needs the admin channel (--server HOST), the one that runs commands on the server"
 
   Scenario: The gate off with every need before it ready is set on, and the workflow run
     Given the variable "DEPLOY_EXAMPLE" is "off"

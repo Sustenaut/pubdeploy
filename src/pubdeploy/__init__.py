@@ -22,7 +22,8 @@ Bitwarden write token when a need wants one (the sustenaut.walk hook,
 pubsec's, asks for it at a hidden prompt), and visits
 the needs again, making each auto one that is missing. A walk from GitHub
 Actions, or with --yes and no terminal, asks for no token, so the needs that
-want one are unknown. The channels kubectl and the server are reached by are
+want one are unknown, unless PUBSEC_WRITE_TOKEN_FILE names a file the hook
+reads the token from (the convergence engine's Fulfil). The channels kubectl and the server are reached by are
 channels.py's; a block's units, units.py's: each is walked, and journaled,
 on its own.
 
@@ -330,7 +331,9 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
     if fulfil:
         env = walks[0][0].env
         terminal = sys.stdin.isatty() and env.get("GITHUB_ACTIONS") != "true"
-        acts = [(ctx, planned(journal, loaded.types, ctx, token_coming=terminal)) for ctx, journal in walks]
+        # Without a terminal, a token file the hook reads (pubsec's, for the engine's Fulfil).
+        token_coming = terminal or bool(env.get("PUBSEC_WRITE_TOKEN_FILE"))
+        acts = [(ctx, planned(journal, loaded.types, ctx, token_coming=token_coming)) for ctx, journal in walks]
         approved: set[tuple[str, str]] = set()
         declined = False
         if any(plan for _, plan in acts):
@@ -343,7 +346,7 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
             else:
                 declined = True
                 print("deploy: nothing was fulfilled", file=sys.stderr)
-        if approved and terminal:
+        if approved and token_coming:
             for ctx, plan in acts:
                 if wants_token(plan, loaded.types, ctx):
                     prepare(ctx, plan, terminal)

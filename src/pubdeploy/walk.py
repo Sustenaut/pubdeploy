@@ -32,7 +32,7 @@ from .order import edges, topological
 
 ACTING = ("missing", "drift", "blocked")
 # What a fulfil may need of its context, and the fix when the context lacks it.
-LACKS = {"server": "needs the admin channel (--server HOST) or the plane",
+LACKS = {"server": "needs the admin channel (--server HOST), the one that runs commands on the server",
          "kubectl-write": "needs the admin channel or the plane",
          "write-token": "needs a Bitwarden write token: run the walk at a terminal"}
 

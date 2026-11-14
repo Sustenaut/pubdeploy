@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "k8s.manifests compares the objects with the file by a server-side dry run: an object there but changed is drift, and a dry run the channel may not make is unknown, never ready"
+}
