@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.3.2 is released as v0.3.2 from commit be3aefded69e1bfae00aaac4280ce2a1c3e32c1d.",
+      "content": "pubdeploy 0.4.0 is released as v0.4.0 from commit db705e99289b0151e3d038ab6fda58c9cff6cb58.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.3.2",
+            "0.4.0",
             "pubdeploy --version",
-            "pubdeploy 0.3.2",
-            "v0.3.2",
-            "be3aefded69e1bfae00aaac4280ce2a1c3e32c1d"
+            "pubdeploy 0.4.0",
+            "v0.4.0",
+            "db705e99289b0151e3d038ab6fda58c9cff6cb58"
           ]
         ]
       },
-      "scope": "the published release v0.3.2 of pubdeploy",
+      "scope": "the published release v0.4.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "be3aefded69e1bfae00aaac4280ce2a1c3e32c1d"
+          "revision": "db705e99289b0151e3d038ab6fda58c9cff6cb58"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.3.2 was released on 2026-11-14 from commit be3aefded69e1bfae00aaac4280ce2a1c3e32c1d with these changes.",
+      "content": "pubdeploy 0.4.0 was released on 2026-11-14 from commit db705e99289b0151e3d038ab6fda58c9cff6cb58 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,31 +57,19 @@
         ],
         "rows": [
           [
-            "fixed",
-            "dns.site is unknown, not missing, for a host in a zone no hosting block given holds: another owner's zones, not a site to add"
-          ],
-          [
-            "added",
-            "--zones may be given more than once, one pubkit.json per owner whose zones the units' hosts are in"
-          ],
-          [
-            "added",
-            "A walk without a terminal calls the sustenaut.walk hook when PUBSEC_WRITE_TOKEN_FILE is set, so pubsec can read the write token from that file (the convergence engine's Fulfil)"
-          ],
-          [
-            "added",
-            "k8s.manifests compares the objects with the file by a server-side dry run: an object there but changed is drift, and a dry run the channel may not make is unknown, never ready"
+            "changed",
+            "A fulfil may return blocked, for what only someone else can change (a grant, say): the walk records the need as blocked with the fulfil's fix, rather than keeping its check's state"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.3.2 of pubdeploy",
+      "scope": "the published release v0.4.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "be3aefded69e1bfae00aaac4280ce2a1c3e32c1d"
+          "revision": "db705e99289b0151e3d038ab6fda58c9cff6cb58"
         }
       ]
     }
