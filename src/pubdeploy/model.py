@@ -192,8 +192,10 @@ class NeedType(Protocol):
     def fulfil(self, need: Need, ctx: Context) -> Result:
         """Make what check found missing or drifted, and say what was done in
         `summary`, state ready. It raises nothing: a failure is a Result with
-        state missing or drift and the cause in fix. A propose or human type's
-        changes nothing, and gives the change to make as fix."""
+        state missing or drift and the cause in fix, or blocked when what stops it
+        is someone else's to change (a grant, say), which the walk then records
+        as the need's state. A propose or human type's changes nothing, and gives
+        the change to make as fix."""
 
 
 SCHEMA = "deploy-journal/2"

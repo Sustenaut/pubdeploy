@@ -248,6 +248,11 @@ def fulfil(journal: Journal, types: Mapping[str, NeedType], ctx: Context, approv
             result.details.append(f"not fulfilled: waits for {late[0]}, which is {ctx.results[late[0]].state}")
             continue
         made = timed(kind, need, ctx, "fulfil")
+        if made.state == "blocked":
+            # The fulfil found what only someone else can change (a grant, say): it stands.
+            keep(i, Result("blocked", made.summary, made.fix, [*result.details, *made.details],
+                           result.checked_at, result.seconds + made.seconds))
+            continue
         if made.state != "ready":
             result.details.append(f"fulfil failed: {made.summary}" + (f"; {made.fix}" if made.fix else ""))
             result.details += made.details

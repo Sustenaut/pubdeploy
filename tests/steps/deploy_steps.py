@@ -1130,3 +1130,9 @@ def hook_without_terminal(world):
 @given("the cluster's objects were applied client-side")
 def client_side(world):
     world.cluster["client_side_owned"] = True
+
+
+@given(parsers.parse('the "{kind}" fulfil is blocked, "{summary}"'))
+def fulfil_blocked(monkeypatch, kind, summary):
+    from pubdeploy.model import Result  # noqa: PLC0415
+    monkeypatch.setattr(builtin(kind), "fulfil", lambda need, ctx: Result("blocked", summary, fix="grant the role"))

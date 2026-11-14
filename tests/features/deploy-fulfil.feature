@@ -118,6 +118,13 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
     And "bitwarden.generated:example-cookie-secret" is ready, "(fulfilled)"
     And "k8s.secret:example-page-secrets" is ready, "(fulfilled)"
 
+  Scenario: A fulfil that finds someone else must act leaves the need blocked, with its fix
+    Given the Secret "example-files" is not in the cluster
+    And the "k8s.secret" fulfil is blocked, "the account may not write Secrets here"
+    When I run pubdeploy "walk" "--fulfil" "--yes"
+    Then "k8s.secret:example-files" is blocked, "the account may not write Secrets here"
+    And it prints "grant the role"
+
   Scenario: A fulfil that fails keeps its state, says why, and the walk goes on
     Given the Secret "example-files" is not in the cluster
     And kubectl may write nothing
