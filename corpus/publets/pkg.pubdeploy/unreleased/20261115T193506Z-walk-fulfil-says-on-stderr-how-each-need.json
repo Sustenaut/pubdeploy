@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "walk --fulfil says on stderr how each need it acted on ended (state, what it found, the fulfil's failure and the fix), so the engine's Fulfil page, which runs it with --json, shows why a need is still not ready"
+}
