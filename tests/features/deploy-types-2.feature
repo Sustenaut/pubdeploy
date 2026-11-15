@@ -171,6 +171,49 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     Then "github.variable-entry:example-org/releases/RELEASE_STATE/evaluator" is drift, "/evaluator of variable RELEASE_STATE in example-org/releases is not the need's value"
     And no output holds a value
 
+  # --- k8s.jwks -------------------------------------------------------------------
+
+  Scenario: A file that pins the cluster's signing keys is ready
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is ready, "pins the cluster's 1 signing key"
+
+  Scenario: A key the cluster rotated in is drift, naming each key, and no walk acts on it
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the cluster signs with the keys key-b=n-b
+    When I run pubdeploy "walk" "--fulfil" "--yes"
+    Then "k8s.jwks:k8s-jwks" is drift, "does not pin the cluster's signing keys"
+    And it prints "the cluster signs with key-b, which infra/k8s-jwks.json does not pin"
+    And it prints "infra/k8s-jwks.json pins key-a, which the cluster no longer has"
+    And it prints "put the output of `kubectl get --raw /openid/v1/jwks` in infra/k8s-jwks.json"
+
+  Scenario: A key whose material changed under the same kid is drift
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-old
+    When I run pubdeploy "walk"
+    Then it prints "key-a differs between infra/k8s-jwks.json and the cluster"
+
+  Scenario: A pinned file that is not a key set is drift
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is drift, "is not a JSON object with the cluster's jwks"
+
+  Scenario: A cluster answer that is not a key set is unknown
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the cluster's key set is not one
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is unknown, "is not a JSON key set"
+
+  Scenario: Without access to the cluster's keys the need is unknown
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And kubectl may not read anything
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is unknown
+
   # --- k8s.cronjob ----------------------------------------------------------------
 
   Scenario: A CronJob that succeeded within twice its schedule's interval is ready

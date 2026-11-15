@@ -86,6 +86,12 @@ class FakeKubectl:
             return Ran(127, "", "kubectl did not run (FileNotFoundError)")
         if self.state["forbidden"]:
             return Ran(1, "", 'Error from server (Forbidden): User "someone" cannot get resource')
+        if args[:2] == ["get", "--raw"]:
+            # The cluster's service-account signing keys, by kid.
+            if self.state.get("jwks") == "garbled":
+                return Ran(0, json.dumps({"keys": "none"}))
+            return Ran(0, json.dumps({"keys": [{"kid": k, "kty": "RSA", "n": n, "e": "AQAB"}
+                                               for k, n in self.state.get("jwks", {"key-a": "n-a"}).items()]}))
         if args[:2] == ["get", "namespace"]:
             ns = args[2]
             if ns in self.state["namespaces"]:
