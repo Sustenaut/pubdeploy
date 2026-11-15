@@ -272,6 +272,21 @@ def counted(journal: Journal, types: Mapping[str, NeedType], offline: bool) -> l
     return [(n, r) for n, r in journal.entries if not offline or types[n.type].offline]
 
 
+def outcomes(journal: Journal, approved: set[str]) -> list[str]:
+    """How each need the walk was to act on ended: its state, what it found, and the fix
+    when it is not ready, as `lines` says them; for stderr, beside the plan."""
+    out = []
+    for need, result in journal.entries:
+        if need.id not in approved:
+            continue
+        made = " (fulfilled)" if result.fulfilled else ""
+        out.append(f"  {result.state:<7} {need.id}  {result.summary}{made}")
+        out += [f"            {d}" for d in result.details]
+        if result.state != "ready" and result.fix:
+            out += [f"            to do: {line}" for line in result.fix.splitlines()]
+    return out
+
+
 def lines(journal: Journal) -> list[str]:
     """The human form: a line per need, then what to do about each one not ready, then the count."""
     out = []

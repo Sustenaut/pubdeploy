@@ -136,6 +136,18 @@ Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is con
     And "github.secret:EXAMPLE_TOKEN" is ready, "(fulfilled)"
     And no output holds a value
 
+  Scenario: With --json, as the engine's Fulfil runs it, stderr says how each need acted on ended
+    Given the Secret "example-files" is not in the cluster
+    And kubectl may write nothing
+    And GitHub holds no secret "EXAMPLE_TOKEN"
+    When I run pubdeploy "walk" "--fulfil" "--yes" "--json"
+    Then the exit code is 1
+    And stderr mentions "deploy: the walk did:"
+    And stderr mentions "missing k8s.secret:example-files"
+    And stderr mentions "fulfil failed: kubectl apply of Secret example-files in example failed"
+    And stderr mentions "ready   github.secret:EXAMPLE_TOKEN"
+    And no output holds a value
+
   Scenario: Over the read-only deploy channel every write is unknown
     Given the walk reads the cluster over the deploy channel
     And the Secret "example-files" is not in the cluster

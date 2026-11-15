@@ -299,7 +299,7 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
     from .config import read_config  # noqa: PLC0415
     from .registry import load as registry  # noqa: PLC0415
     from .units import names  # noqa: PLC0415
-    from .walk import counted, fulfil as act, lines, planned, unable, wants_token  # noqa: PLC0415
+    from .walk import counted, fulfil as act, lines, outcomes, planned, unable, wants_token  # noqa: PLC0415
     config = read_config(root)
     loaded = registry()
     for warning in loaded.warnings:
@@ -353,6 +353,15 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
         for ctx, journal in walks:
             unable(journal, loaded.types, ctx, declined)
             act(journal, loaded.types, ctx, {i for u, i in approved if u == ctx.unit})
+        if approved:
+            # What it did, on stderr too: with --json (the engine's Fulfil) the journal is stdout's.
+            print("deploy: the walk did:", file=sys.stderr)
+            for ctx, journal in walks:
+                said = outcomes(journal, {i for u, i in approved if u == ctx.unit})
+                if said and len(walks) > 1:
+                    print(f"  unit {ctx.unit}:", file=sys.stderr)
+                for line in said:
+                    print(line, file=sys.stderr)
     documents = [journal.document() for _, journal in walks]
     if as_json:
         print(json.dumps(documents[0] if len(documents) == 1 else documents, indent=2))
