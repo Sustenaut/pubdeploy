@@ -347,6 +347,10 @@ class Jwks(Base):
             pinned = keys_of(json.loads((Path(ctx.root) / file).read_text(encoding="utf-8")).get("jwks"))
         except (OSError, ValueError, AttributeError):
             return Result("drift", f"{file} is not a JSON object with the cluster's jwks", fixable=False, fix=fix)
+        if ctx.channel == "deploy":
+            # The server's read-only verb takes get with its own flags, and --raw is not one.
+            return Result("unknown", "the cluster's signing keys are read over the admin channel or from the plane",
+                          fix="run the walk with --server HOST, the admin channel, or from the plane")
         ran = ctx.kubectl(["get", "--raw", "/openid/v1/jwks"])
         if ran.returncode != 0:
             return kubectl_refused(ran, ctx.namespace, "the cluster's signing keys (/openid/v1/jwks)")

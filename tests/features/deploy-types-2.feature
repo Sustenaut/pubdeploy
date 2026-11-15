@@ -207,6 +207,13 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     When I run pubdeploy "walk"
     Then "k8s.jwks:k8s-jwks" is unknown, "is not a JSON key set"
 
+  Scenario: Over the read-only deploy channel the cluster's keys are not read
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the walk reads the cluster over the deploy channel
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is unknown, "read over the admin channel or from the plane"
+
   Scenario: Without access to the cluster's keys the need is unknown
     Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
     And the file "infra/k8s-jwks.json" pins the keys key-a=n-a

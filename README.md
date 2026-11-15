@@ -327,7 +327,11 @@ change to the provider contract. Where pubsec is not installed, a need of
 one of its types says so.
 
 `dns.site`, `storage.tenant` and `github.variable-entry` propose; `upstream`
-and `k8s.secrets-declared` have no fulfil. Before it fulfils a need that
+and `k8s.secrets-declared` have no fulfil, nor has `k8s.jwks`, a person's step:
+it compares a file that pins the cluster's service-account signing keys (for
+Google's Workload Identity providers and storage's principals) with the
+cluster's own, read over the admin channel or from the plane, as the deploy
+channel cannot. Before it fulfils a need that
 wants the Bitwarden write token, at a terminal, the walk calls each
 `sustenaut.walk` hook, `prepare(ctx, plan, terminal)`: pubsec's asks for the
 token once, at a hidden prompt, and gives the walk its writer, kept only by
