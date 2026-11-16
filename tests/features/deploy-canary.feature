@@ -1,5 +1,5 @@
-Feature: The canary
-  no secret value ever reaches what `pubkit deploy` prints. Every fake
+Feature: The canary: no secret value ever reaches what pubdeploy prints
+  Every fake
   Secret value, every fake Bitwarden value, the write token, every fake key
   JSON and what the deploy channel shows of a Secret hold CANARY, and every
   value a fulfil generates is kept as one too. Each test drives the checks,
