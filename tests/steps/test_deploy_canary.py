@@ -21,6 +21,9 @@ from pubdeploy import load
 from pubdeploy.model import Need, Result
 from pubdeploy.registry import types
 from pubdeploy.walk import walk
+from pytest_bdd import given, parsers, scenarios, then, when
+
+scenarios("deploy-canary.feature")
 
 STATES = {
     "all well": lambda w: None,
@@ -53,20 +56,26 @@ STATES = {
 }
 
 
-@pytest.mark.parametrize("state", sorted(STATES))
-@pytest.mark.parametrize("argv", [("check",), ("check", "--json"),
-                                  ("check", "--offline", "--json"), ("walk", "--fulfil", "--yes"),
-                                  ("walk", "--fulfil", "--yes", "--json")])
-def test_no_value_is_printed(world, capsys, state, argv):
+@given(parsers.parse('the deploy world with {state}'))
+def in_state(world, state):
     STATES[state](world)
-    run(world, capsys, *argv)
+
+
+@when(parsers.parse('pubdeploy runs "{argv}"'))
+def runs(world, capsys, argv):
+    run(world, capsys, *argv.split())
+
+
+@then("no value is printed, passed to a program or kept in the journal")
+def no_value(world):
     assert world.code in (0, 1)
     for text in world.outputs:
         assert CANARY not in text
     assert not world.leaked(), world.leaked()[0][:500]
 
 
-def test_an_exception_holding_a_value_is_not_shown(world, capsys):
+@then("an exception holding a value is not shown")
+def an_exception_holding_a_value_is_not_shown(world, capsys):
     class Leaky:
         type, grade, budget, offline, schema = "example.leaky", "none", 1.0, True, {}
 
@@ -91,14 +100,16 @@ def test_an_exception_holding_a_value_is_not_shown(world, capsys):
     assert CANARY not in journal.json()
 
 
-def test_a_value_in_the_rendered_manifests_is_not_shown(world, capsys):
+@then("a value in the rendered manifests is not shown")
+def a_value_in_the_rendered_manifests_is_not_shown(world, capsys):
     world.rendered += ("---\napiVersion: v1\nkind: Secret\nmetadata: {name: example-held, namespace: example}\n"
                        f"stringData: {{cookie: {CANARY}}}\n")
     run(world, capsys, "check", "--offline")
     assert CANARY not in world.stdout + world.stderr
 
 
-def test_every_result_of_the_sound_fixture_is_free_of_values(world):
+@then("every result of the sound fixture is free of values")
+def every_result_of_the_sound_fixture_is_free_of_values(world):
     ctx = world.context()
     plan = load(world.root, world.config, ctx)
     journal = walk(plan.needs, types(), ctx, service={})
@@ -107,7 +118,8 @@ def test_every_result_of_the_sound_fixture_is_free_of_values(world):
     assert CANARY not in journal.json()
 
 
-def test_a_fulfil_that_raises_holding_a_value_is_not_shown(world):
+@then("a fulfil that raises holding a value is not shown")
+def a_fulfil_that_raises_holding_a_value_is_not_shown(world):
     from pubdeploy.walk import fulfil  # noqa: PLC0415
 
     class Leaky:
@@ -135,7 +147,8 @@ def test_a_fulfil_that_raises_holding_a_value_is_not_shown(world):
     assert CANARY not in journal.json()
 
 
-def test_generated_values_stay_in_the_walk(world, capsys):
+@then("generated values stay in the walk")
+def generated_values_stay_in_the_walk(world, capsys):
     """ctx.values holds what a fulfil made: never journaled, printed or kept."""
     world.env.pop("EXAMPLE_COOKIE_SECRET")
     run(world, capsys, "walk", "--fulfil", "--yes", "--json")
