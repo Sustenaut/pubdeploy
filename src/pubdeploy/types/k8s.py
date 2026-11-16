@@ -142,12 +142,13 @@ def leftovers(ctx: Context, known: set[str]) -> list[str]:
     on the manifests alone then)."""
     if ctx.offline or ctx.channel == "deploy":
         return []
-    found, _ran = kubectl_json(ctx, "-n", ctx.namespace, "get", "secrets")
-    items = (found or {}).get("items") if isinstance(found, dict) else None
-    if not isinstance(items, list):
+    # Names and types alone: no Secret's data reaches the walk, nor crosses the admin channel.
+    ran = ctx.kubectl(["-n", ctx.namespace, "get", "secrets", "--no-headers",
+                       "-o", "custom-columns=NAME:.metadata.name,TYPE:.type"])
+    if ran.returncode != 0:
         return []
-    return sorted(str((i.get("metadata") or {}).get("name", "")) for i in items if isinstance(i, dict)
-                  and i.get("type") == "Opaque" and (i.get("metadata") or {}).get("name") not in known)
+    rows = [line.split() for line in ran.stdout.splitlines()]
+    return sorted(row[0] for row in rows if len(row) == 2 and row[1] == "Opaque" and row[0] not in known)
 
 
 class Manifests(Base):
