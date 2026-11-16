@@ -3,8 +3,8 @@
   "corpus": {
     "domain": "pub:sha2-256:evpbp2q23ylrz26ss3rugqlmgzznfs2xrww66rfgofi7fxyr7r7a",
     "generation": {
-      "cid": "pub:sha2-256:a6o4trormxmmrpgbqsw2wd6yzwnoxr7gzfozmd3r4qllajlnylsa",
-      "index": 7
+      "cid": "pub:sha2-256:yi7k2yk36ohc6wlu6bjgprnwnkg4gxwq37oqzicms2whyvyeplta",
+      "index": 8
     },
     "imports": {},
     "key": "pub:sha2-256:pkeuiji3cpe2uve5puqzpxfj5trk2kb4ykmhclsuc3r433knf6rq",
@@ -18,8 +18,8 @@
     ]
   },
   "publets": [
-    {"slug": "pkg.pubdeploy", "kind": "doc", "tag": "PKG-PUBDEP-11-2026", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:kpl3jntj4e24lf6ppvvcni7z54tnh5uqgpiypa5sew5u4d3iqo3q", "genesis": "pub:sha2-256:ei4vg6xgm5srlkyfahz6l4tlbejd4ntwcikzcdlweohch6iqusmq", "deps": ["pkg.pubdeploy#identity", "pkg.pubdeploy#release"]},
-    {"slug": "pkg.pubdeploy#identity", "kind": "claim", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:mdbtzevfyq2v3kne4xc4gfobeb3i2dvamni27arz3xjyczku6z6q", "genesis": "pub:sha2-256:2x5ffvmfanhclhoys7dzltf7dykhsbrbcgut5fl2ifdobcfzw4na", "deps": []},
-    {"slug": "pkg.pubdeploy#release", "kind": "claim", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:uw3brdw7422aie5663j7g5vglvbuq6kdwdknhzz4l6be2pvwopla", "genesis": "pub:sha2-256:i64ilzy3jytw2r4e5dddfuun2kfasm7vsz2sxmoesm7k7ngfqetq", "deps": ["pkg.pubdeploy#identity"]}
+    {"slug": "pkg.pubdeploy", "kind": "doc", "tag": "PKG-PUBDEP-11-2026", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:df5nv6tu573wxzz7srvh36qbgsynyheaqtwxt6eq5ekj3t5cwnwq", "genesis": "pub:sha2-256:ei4vg6xgm5srlkyfahz6l4tlbejd4ntwcikzcdlweohch6iqusmq", "deps": ["pkg.pubdeploy#identity", "pkg.pubdeploy#release"]},
+    {"slug": "pkg.pubdeploy#identity", "kind": "claim", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:rr5byzhdnowllagkblutaov4uuzuz7b3nb4k6fqxjv3swoajn2iq", "genesis": "pub:sha2-256:2x5ffvmfanhclhoys7dzltf7dykhsbrbcgut5fl2ifdobcfzw4na", "deps": []},
+    {"slug": "pkg.pubdeploy#release", "kind": "claim", "source": "publets/pkg.pubdeploy", "cid": "pub:sha2-256:6o6kfluzl3wwc77wsroi3p3vbdmogvlqinvndwcpzqwa52jew4ka", "genesis": "pub:sha2-256:i64ilzy3jytw2r4e5dddfuun2kfasm7vsz2sxmoesm7k7ngfqetq", "deps": ["pkg.pubdeploy#identity"]}
   ]
 }

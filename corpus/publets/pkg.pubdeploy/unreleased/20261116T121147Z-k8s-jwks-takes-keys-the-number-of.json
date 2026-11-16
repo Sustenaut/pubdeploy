@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "k8s.jwks takes keys: the number of signing keys the cluster must publish (2: one signs, the other is its fallback); fewer is drift"
-}

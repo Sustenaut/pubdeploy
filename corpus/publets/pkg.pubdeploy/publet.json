@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.4.2 is released as v0.4.2 from commit 0d87679248fb3c3e4de313e4d11ca4560d5dc3e0.",
+      "content": "pubdeploy 0.4.3 is released as v0.4.3 from commit d4b33cfbebde950991f873bad78cbd735b94a854.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.4.2",
+            "0.4.3",
             "pubdeploy --version",
-            "pubdeploy 0.4.2",
-            "v0.4.2",
-            "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
+            "pubdeploy 0.4.3",
+            "v0.4.3",
+            "d4b33cfbebde950991f873bad78cbd735b94a854"
           ]
         ]
       },
-      "scope": "the published release v0.4.2 of pubdeploy",
+      "scope": "the published release v0.4.3 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
+          "revision": "d4b33cfbebde950991f873bad78cbd735b94a854"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.4.2 was released on 2026-11-16 from commit 0d87679248fb3c3e4de313e4d11ca4560d5dc3e0 with these changes.",
+      "content": "pubdeploy 0.4.3 was released on 2026-11-16 from commit d4b33cfbebde950991f873bad78cbd735b94a854 with these changes.",
       "data": {
         "columns": [
           {
@@ -58,18 +58,18 @@
         "rows": [
           [
             "added",
-            "k8s.secrets-declared says which Opaque Secret in the namespace nothing reads or declares (drift, with its kubectl delete), when the walk reads the cluster: one a need filled before it went"
+            "k8s.jwks takes keys: the number of signing keys the cluster must publish (2: one signs, the other is its fallback); fewer is drift"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.4.2 of pubdeploy",
+      "scope": "the published release v0.4.3 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
+          "revision": "d4b33cfbebde950991f873bad78cbd735b94a854"
         }
       ]
     }
