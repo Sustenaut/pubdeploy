@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.4.0 is released as v0.4.0 from commit db705e99289b0151e3d038ab6fda58c9cff6cb58.",
+      "content": "pubdeploy 0.4.1 is released as v0.4.1 from commit 467e8043751b24c14dc1225cba19b3c6e46f0d12.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.4.0",
+            "0.4.1",
             "pubdeploy --version",
-            "pubdeploy 0.4.0",
-            "v0.4.0",
-            "db705e99289b0151e3d038ab6fda58c9cff6cb58"
+            "pubdeploy 0.4.1",
+            "v0.4.1",
+            "467e8043751b24c14dc1225cba19b3c6e46f0d12"
           ]
         ]
       },
-      "scope": "the published release v0.4.0 of pubdeploy",
+      "scope": "the published release v0.4.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "db705e99289b0151e3d038ab6fda58c9cff6cb58"
+          "revision": "467e8043751b24c14dc1225cba19b3c6e46f0d12"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.4.0 was released on 2026-11-14 from commit db705e99289b0151e3d038ab6fda58c9cff6cb58 with these changes.",
+      "content": "pubdeploy 0.4.1 was released on 2026-11-16 from commit 467e8043751b24c14dc1225cba19b3c6e46f0d12 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,24 +57,28 @@
         ],
         "rows": [
           [
-            "changed",
-            "A fulfil may return blocked, for what only someone else can change (a grant, say): the walk records the need as blocked with the fulfil's fix, rather than keeping its check's state"
+            "added",
+            "walk --fulfil says on stderr how each need it acted on ended (state, what it found, the fulfil's failure and the fix), so the engine's Fulfil page, which runs it with --json, shows why a need is still not ready"
+          ],
+          [
+            "added",
+            "k8s.jwks: a file that pins the cluster's service-account signing keys (Workload Identity providers, storage's principals) holds exactly the keys kubectl get --raw /openid/v1/jwks gives; drift names each key added, gone or changed"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.4.0 of pubdeploy",
+      "scope": "the published release v0.4.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "db705e99289b0151e3d038ab6fda58c9cff6cb58"
+          "revision": "467e8043751b24c14dc1225cba19b3c6e46f0d12"
         }
       ]
     }
   },
-  "created": "2026-11-14T00:00:00Z",
+  "created": "2026-11-16T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
