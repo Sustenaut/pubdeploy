@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.4.1 is released as v0.4.1 from commit 467e8043751b24c14dc1225cba19b3c6e46f0d12.",
+      "content": "pubdeploy 0.4.2 is released as v0.4.2 from commit 0d87679248fb3c3e4de313e4d11ca4560d5dc3e0.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.4.1",
+            "0.4.2",
             "pubdeploy --version",
-            "pubdeploy 0.4.1",
-            "v0.4.1",
-            "467e8043751b24c14dc1225cba19b3c6e46f0d12"
+            "pubdeploy 0.4.2",
+            "v0.4.2",
+            "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
           ]
         ]
       },
-      "scope": "the published release v0.4.1 of pubdeploy",
+      "scope": "the published release v0.4.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "467e8043751b24c14dc1225cba19b3c6e46f0d12"
+          "revision": "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.4.1 was released on 2026-11-16 from commit 467e8043751b24c14dc1225cba19b3c6e46f0d12 with these changes.",
+      "content": "pubdeploy 0.4.2 was released on 2026-11-16 from commit 0d87679248fb3c3e4de313e4d11ca4560d5dc3e0 with these changes.",
       "data": {
         "columns": [
           {
@@ -58,22 +58,18 @@
         "rows": [
           [
             "added",
-            "walk --fulfil says on stderr how each need it acted on ended (state, what it found, the fulfil's failure and the fix), so the engine's Fulfil page, which runs it with --json, shows why a need is still not ready"
-          ],
-          [
-            "added",
-            "k8s.jwks: a file that pins the cluster's service-account signing keys (Workload Identity providers, storage's principals) holds exactly the keys kubectl get --raw /openid/v1/jwks gives; drift names each key added, gone or changed"
+            "k8s.secrets-declared says which Opaque Secret in the namespace nothing reads or declares (drift, with its kubectl delete), when the walk reads the cluster: one a need filled before it went"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.4.1 of pubdeploy",
+      "scope": "the published release v0.4.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "467e8043751b24c14dc1225cba19b3c6e46f0d12"
+          "revision": "0d87679248fb3c3e4de313e4d11ca4560d5dc3e0"
         }
       ]
     }
