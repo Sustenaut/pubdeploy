@@ -123,13 +123,32 @@ class SecretsDeclared(Base):
             if name not in reads:
                 lines.append(f"Secret {name} is declared by {', '.join(i for i, _ in fillers)} but nothing reads it")
         count = len([n for n, refs in reads.items() if n not in held and any(not r.optional for r in refs)])
+        left = leftovers(ctx, set(reads) | set(declared) | held)
+        lines += [f"Secret {name} is in the cluster, and nothing reads or declares it: "
+                  f"kubectl -n {ctx.namespace} delete secret {name}" for name in left]
         if lines:
             return Result("drift", f"the manifests and the needs disagree about {len(lines)} "
                                    f"Secret{'s' * (len(lines) != 1)}", details=lines,
                           fix="make deploy.needs say where each Secret the manifests read comes from, "
-                              "and drop what nothing reads")
+                              "drop what nothing reads, and delete a Secret left in the cluster")
         return Result("ready", f"the manifests read {count} Secret{'s' * (count != 1)}, "
                                f"and a need says where each comes from")
+
+
+def leftovers(ctx: Context, known: set[str]) -> list[str]:
+    """The Opaque Secrets in the namespace that nothing reads or declares: one a need
+    filled before the need went, say a key's once its service reaches Google without
+    one. None when the walk is offline or kubectl may not list them (the check stands
+    on the manifests alone then)."""
+    if ctx.offline or ctx.channel == "deploy":
+        return []
+    # Names and types alone: no Secret's data reaches the walk, nor crosses the admin channel.
+    ran = ctx.kubectl(["-n", ctx.namespace, "get", "secrets", "--no-headers",
+                       "-o", "custom-columns=NAME:.metadata.name,TYPE:.type"])
+    if ran.returncode != 0:
+        return []
+    rows = [line.split() for line in ran.stdout.splitlines()]
+    return sorted(row[0] for row in rows if len(row) == 2 and row[1] == "Opaque" and row[0] not in known)
 
 
 class Manifests(Base):

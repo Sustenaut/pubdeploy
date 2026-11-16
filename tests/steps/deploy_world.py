@@ -105,6 +105,11 @@ class FakeKubectl:
             return self.write(ns, verb, rest, input, space)
         kind = rest[0]
         name = rest[1] if len(rest) > 1 else None
+        if kind == "secrets" and "--no-headers" in rest:
+            # The namespace's Secrets as custom columns, names and types: asked for any other
+            # way, the walk would hold their values, which it never may.
+            assert "--no-headers" in raw and "custom-columns=NAME:.metadata.name,TYPE:.type" in raw, raw
+            return Ran(0, "".join(f"{n}   Opaque\n" for n in sorted((space or {}).get("secrets", {}))))
         if kind in ("deployment", "job") and name is None:
             return Ran(0, json.dumps({"items": (space or {}).get(kind, [])}))
         if "/" in kind:

@@ -223,6 +223,11 @@ a `github.gate`; each entry of `secrets` and `github_app` a `github.secret` or
 `github.variable`, and the server's settings a `github.deploy-settings`; each
 of `variables.names` a `github.variable` that must be set; each need's
 `secret`, and each Secret the rendered overlay reads, a `k8s.secret`.
+`k8s.secrets-declared` holds the manifests and the needs to each other, and,
+when the walk reads the cluster (not offline, not over the deploy channel), says
+which Opaque Secret in the namespace nothing reads or declares, with its delete:
+one left behind when a need went, such as a key's once the service reaches Google
+without one.
 
 `pubdeploy check` walks them in order: the namespace before what is in
 it, what fills a Secret before the Secret, the gate after everything but the
