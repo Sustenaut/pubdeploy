@@ -263,3 +263,16 @@ Feature: pubkit deploy check walks every need, and changes nothing
     When I run pubdeploy "check" "--json"
     Then the exit code is 1
     And no output holds a value
+
+  Scenario: A Secret left in the cluster, which nothing reads or declares, is drift with its delete as the fix
+    Given the cluster still holds the Secret "example-old-key", which nothing reads or declares
+    When I run pubdeploy "check"
+    Then "k8s.secrets-declared:example" is drift, "disagree about 1 Secret"
+    And it prints "Secret example-old-key is in the cluster, and nothing reads or declares it: kubectl -n example delete secret example-old-key"
+    And "github.gate:example" is unknown, "could not be shown ready"
+    And no output holds a value
+
+  Scenario: Offline, the cluster's Secrets are not looked at
+    Given the cluster still holds the Secret "example-old-key", which nothing reads or declares
+    When I run pubdeploy "check" "--offline"
+    Then it does not print "example-old-key"

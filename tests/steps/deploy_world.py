@@ -105,6 +105,10 @@ class FakeKubectl:
             return self.write(ns, verb, rest, input, space)
         kind = rest[0]
         name = rest[1] if len(rest) > 1 else None
+        if kind == "secrets" and name is None:
+            # The namespace's Secrets, as a list: their names and types (no value is looked at).
+            return Ran(0, json.dumps({"items": [{"metadata": {"name": n}, "type": "Opaque"}
+                                                for n in sorted((space or {}).get("secrets", {}))]}))
         if kind in ("deployment", "job") and name is None:
             return Ran(0, json.dumps({"items": (space or {}).get(kind, [])}))
         if "/" in kind:

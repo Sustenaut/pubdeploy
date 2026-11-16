@@ -409,6 +409,11 @@ def lacks_key(world, secret, key):
     data["other"] = f"{CANARY}-other".encode()
 
 
+@given(parsers.parse('the cluster still holds the Secret "{secret}", which nothing reads or declares'))
+def leftover_secret(world, secret):
+    namespace(world)["secrets"][secret] = {"key.json": f"{CANARY}-key".encode()}
+
+
 @given(parsers.parse('the Secret "{secret}" is not in the cluster'))
 def no_secret(world, secret):
     del namespace(world)["secrets"][secret]

@@ -123,13 +123,31 @@ class SecretsDeclared(Base):
             if name not in reads:
                 lines.append(f"Secret {name} is declared by {', '.join(i for i, _ in fillers)} but nothing reads it")
         count = len([n for n, refs in reads.items() if n not in held and any(not r.optional for r in refs)])
+        left = leftovers(ctx, set(reads) | set(declared) | held)
+        lines += [f"Secret {name} is in the cluster, and nothing reads or declares it: "
+                  f"kubectl -n {ctx.namespace} delete secret {name}" for name in left]
         if lines:
             return Result("drift", f"the manifests and the needs disagree about {len(lines)} "
                                    f"Secret{'s' * (len(lines) != 1)}", details=lines,
                           fix="make deploy.needs say where each Secret the manifests read comes from, "
-                              "and drop what nothing reads")
+                              "drop what nothing reads, and delete a Secret left in the cluster")
         return Result("ready", f"the manifests read {count} Secret{'s' * (count != 1)}, "
                                f"and a need says where each comes from")
+
+
+def leftovers(ctx: Context, known: set[str]) -> list[str]:
+    """The Opaque Secrets in the namespace that nothing reads or declares: one a need
+    filled before the need went, say a key's once its service reaches Google without
+    one. None when the walk is offline or kubectl may not list them (the check stands
+    on the manifests alone then)."""
+    if ctx.offline or ctx.channel == "deploy":
+        return []
+    found, _ran = kubectl_json(ctx, "-n", ctx.namespace, "get", "secrets")
+    items = (found or {}).get("items") if isinstance(found, dict) else None
+    if not isinstance(items, list):
+        return []
+    return sorted(str((i.get("metadata") or {}).get("name", "")) for i in items if isinstance(i, dict)
+                  and i.get("type") == "Opaque" and (i.get("metadata") or {}).get("name") not in known)
 
 
 class Manifests(Base):
