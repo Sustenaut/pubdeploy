@@ -1,4 +1,4 @@
-"""k8s.namespace, k8s.secrets-declared, k8s.manifests and k8s.cronjob:
+"""k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob and k8s.jwks:
 what the cluster must hold, read through kubectl, and what the rendered
 manifests read, which needs no cluster. They use pubdeploy.k8s, which needs
 nothing of this package's. k8s.secret, which reads a Secret's values and
@@ -318,3 +318,60 @@ class CronJob(Base):
 
     def fulfil(self, need: Need, ctx: Context) -> Result:
         return run_job(ctx, need.name, self.fulfil_budget)
+
+
+class Jwks(Base):
+    """A file that pins the cluster's service-account signing keys is the
+    cluster's: each key `kubectl get --raw /openid/v1/jwks` gives, and no other.
+    What trusts the cluster's tokens without asking it (Google's Workload
+    Identity providers, storage's principals) reads the file, so a key the
+    cluster rotated fails all of them at once, and only at run time."""
+    type = "k8s.jwks"
+    grade = "human"
+    # One kubectl call.
+    budget = 4.0
+    schema = schema({"file": {"type": "string", "minLength": 1,
+                              "x-phrase": "must be the pinned file's path, from the repository's root"}},
+                    ("file",))
+
+    def default_name(self, params: dict[str, Any]) -> str | None:
+        file = params.get("file")
+        return Path(file).stem if isinstance(file, str) and file else None
+
+    def check(self, need: Need, ctx: Context) -> Result:
+        import json  # noqa: PLC0415
+        file = need.params["file"]
+        fix = (f"put the output of `kubectl get --raw /openid/v1/jwks` in {file} as jwks, and in every other "
+               f"copy of it, then apply what reads them")
+        try:
+            pinned = keys_of(json.loads((Path(ctx.root) / file).read_text(encoding="utf-8")).get("jwks"))
+        except (OSError, ValueError, AttributeError):
+            return Result("drift", f"{file} is not a JSON object with the cluster's jwks", fixable=False, fix=fix)
+        if ctx.channel == "deploy":
+            # The server's read-only verb takes get with its own flags, and --raw is not one.
+            return Result("unknown", "the cluster's signing keys are read over the admin channel or from the plane",
+                          fix="run the walk with --server HOST, the admin channel, or from the plane")
+        ran = ctx.kubectl(["get", "--raw", "/openid/v1/jwks"])
+        if ran.returncode != 0:
+            return kubectl_refused(ran, ctx.namespace, "the cluster's signing keys (/openid/v1/jwks)")
+        try:
+            live = keys_of(json.loads(ran.stdout))
+        except (ValueError, AttributeError):
+            return Result("unknown", "the cluster's /openid/v1/jwks is not a JSON key set",
+                          fix="see what kubectl get --raw /openid/v1/jwks gives")
+        if live == pinned:
+            return Result("ready", f"{file} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
+        details = [f"the cluster signs with {kid}, which {file} does not pin" for kid in sorted(set(live) - set(pinned))]
+        details += [f"{file} pins {kid}, which the cluster no longer has" for kid in sorted(set(pinned) - set(live))]
+        details += [f"{kid} differs between {file} and the cluster" for kid in sorted(set(live) & set(pinned))
+                    if live[kid] != pinned[kid]]
+        return Result("drift", f"{file} does not pin the cluster's signing keys", details=details,
+                      fixable=False, fix=fix)
+
+
+def keys_of(jwks: Any) -> dict[str, dict[str, Any]]:
+    """A JSON key set's keys by their kid; an AttributeError when it is not one."""
+    found = jwks.get("keys")
+    if not isinstance(found, list) or not all(isinstance(k, dict) for k in found):
+        raise AttributeError("keys")
+    return {str(k.get("kid", "")): k for k in found}

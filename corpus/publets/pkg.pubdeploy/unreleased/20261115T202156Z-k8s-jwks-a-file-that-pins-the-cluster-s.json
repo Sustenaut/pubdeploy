@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "k8s.jwks: a file that pins the cluster's service-account signing keys (Workload Identity providers, storage's principals) holds exactly the keys kubectl get --raw /openid/v1/jwks gives; drift names each key added, gone or changed"
+}

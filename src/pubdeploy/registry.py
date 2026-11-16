@@ -26,7 +26,7 @@ from typing import Any
 from .model import GRADES, NeedType
 from .types.auth import SignInClient
 from .types.github import VariableEntry
-from .types.k8s import CronJob, Manifests, Namespace, SecretsDeclared
+from .types.k8s import CronJob, Jwks, Manifests, Namespace, SecretsDeclared
 from .types.net import Health, Site, Tenant, Upstream
 from .types.rollout import Gate, Rollout
 
@@ -34,7 +34,7 @@ GROUP = "sustenaut.needs"
 TYPE = re.compile(r"[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+")
 LONGEST = 10.0
 LONGEST_FULFIL = 900.0
-BUILTIN: tuple[NeedType, ...] = (Namespace(), SecretsDeclared(), Manifests(), CronJob(), VariableEntry(), Gate(),
+BUILTIN: tuple[NeedType, ...] = (Namespace(), SecretsDeclared(), Manifests(), CronJob(), Jwks(), VariableEntry(), Gate(),
                                  Upstream(), Site(), Tenant(), Rollout(), Health(), SignInClient())
 PUBDEPLOY = "pubdeploy"
 # The types that hold a secret's value, which pubsec offers: the walk implies

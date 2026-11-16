@@ -493,6 +493,26 @@ def only_comment(world, path):
     (world.root / path).write_text("# nothing to apply\n")
 
 
+@given(parsers.parse('the file "{path}" pins the keys {keys}'))
+def pins_keys(world, path, keys):
+    """Keys as kid=n, comma-separated, as k8s-jwks.json pins them."""
+    pinned = [dict(zip(("kid", "n"), k.strip().split("="), strict=True)) for k in keys.split(",")]
+    target = world.root / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps({"issuer": "https://kubernetes.default.svc.cluster.local",
+                                  "jwks": {"keys": [{**k, "kty": "RSA", "e": "AQAB"} for k in pinned]}}))
+
+
+@given("the cluster's key set is not one")
+def cluster_garbled(world):
+    world.cluster["jwks"] = "garbled"
+
+
+@given(parsers.parse("the cluster signs with the keys {keys}"))
+def cluster_signs(world, keys):
+    world.cluster["jwks"] = dict(k.strip().split("=") for k in keys.split(","))
+
+
 @given(parsers.parse('the file "{path}" holds "{text}"'))
 def file_holds(world, path, text):
     (world.root / path).write_text(text + "\n")
