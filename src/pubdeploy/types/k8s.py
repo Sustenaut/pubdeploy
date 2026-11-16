@@ -341,7 +341,9 @@ class CronJob(Base):
 
 class Jwks(Base):
     """A file that pins the cluster's service-account signing keys is the
-    cluster's: each key `kubectl get --raw /openid/v1/jwks` gives, and no other.
+    cluster's: each key `kubectl get --raw /openid/v1/jwks` gives, and no other;
+    with `keys`, the cluster publishes at least that many (two: one signs, the
+    other is the fallback a swap or a lost key falls back to).
     What trusts the cluster's tokens without asking it (Google's Workload
     Identity providers, storage's principals) reads the file, so a key the
     cluster rotated fails all of them at once, and only at run time."""
@@ -350,7 +352,9 @@ class Jwks(Base):
     # One kubectl call.
     budget = 4.0
     schema = schema({"file": {"type": "string", "minLength": 1,
-                              "x-phrase": "must be the pinned file's path, from the repository's root"}},
+                              "x-phrase": "must be the pinned file's path, from the repository's root"},
+                     "keys": {"type": "integer", "minimum": 1, "maximum": 10,
+                              "x-phrase": "must be how many signing keys the cluster publishes, 1 to 10"}},
                     ("file",))
 
     def default_name(self, params: dict[str, Any]) -> str | None:
@@ -378,6 +382,12 @@ class Jwks(Base):
         except (ValueError, AttributeError):
             return Result("unknown", "the cluster's /openid/v1/jwks is not a JSON key set",
                           fix="see what kubectl get --raw /openid/v1/jwks gives")
+        wanted = need.params.get("keys")
+        if live == pinned and wanted is not None and len(live) < wanted:
+            # One key short of the pair: a lost key would have no fallback to take over.
+            return Result("drift", f"the cluster publishes {len(live)} signing key{'s' * (len(live) != 1)}, "
+                                   f"not the {wanted} the need asks for", fixable=False,
+                          fix="give the cluster its second signing key: shared-infra's scripts/go-live-signing-keys.sh")
         if live == pinned:
             return Result("ready", f"{file} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
         details = [f"the cluster signs with {kid}, which {file} does not pin" for kid in sorted(set(live) - set(pinned))]

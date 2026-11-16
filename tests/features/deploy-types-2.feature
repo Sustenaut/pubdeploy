@@ -189,6 +189,18 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     And it prints "infra/k8s-jwks.json pins key-a, which the cluster no longer has"
     And it prints "put the output of `kubectl get --raw /openid/v1/jwks` in infra/k8s-jwks.json"
 
+  Scenario Outline: With keys, a cluster that publishes fewer is drift, as it has no fallback
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "keys": 2}
+    And the file "infra/k8s-jwks.json" pins the keys <pinned>
+    And the cluster signs with the keys <pinned>
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is <state>, "<words>"
+
+    Examples:
+      | pinned          | state | words                                                      |
+      | key-a=n-a       | drift | the cluster publishes 1 signing key, not the 2 the need asks for |
+      | key-a=n-a,key-b=n-b | ready | pins the cluster's 2 signing keys                       |
+
   Scenario: A key whose material changed under the same kid is drift
     Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
     And the file "infra/k8s-jwks.json" pins the keys key-a=n-old
