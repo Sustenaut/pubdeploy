@@ -1,4 +1,4 @@
-"""The canary: no secret value ever reaches what `pubkit deploy` prints.
+"""The canary: no secret value ever reaches what `pubrules deploy` prints.
 
 Every fake Secret value, every fake Bitwarden value, the write token, every
 fake key JSON and what the deploy channel shows of a Secret hold CANARY, and

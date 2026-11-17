@@ -87,14 +87,14 @@ def last_success(ctx: Context, cronjob: str, status: dict[str, Any]) -> str | No
     """When the CronJob last succeeded: its own lastSuccessfulTime, or a Job
     made from it by hand that completed later. Such a Job, `create job
     --from=cronjob`, is not the CronJob's, so its success never moves the
-    CronJob's status: the Jobs named NAME-pubkit-... (a fulfil's) and NAME-now
+    CronJob's status: the Jobs named NAME-pubrules-... (a fulfil's) and NAME-now
     (the fix's) are looked at too."""
     times = [str(status["lastSuccessfulTime"])] if status.get("lastSuccessfulTime") else []
     found, _ran = kubectl_json(ctx, "-n", ctx.namespace, "get", "job")
     for job in (found or {}).get("items") or []:
         name = str((job.get("metadata") or {}).get("name", ""))
         done = job.get("status") or {}
-        if (name.startswith(f"{cronjob}-pubkit-") or name == f"{cronjob}-now") and (done.get("succeeded") or 0) >= 1 \
+        if (name.startswith(f"{cronjob}-pubrules-") or name == f"{cronjob}-now") and (done.get("succeeded") or 0) >= 1 \
                 and done.get("completionTime"):
             times.append(str(done["completionTime"]))
     return max(times) if times else None
@@ -102,7 +102,7 @@ def last_success(ctx: Context, cronjob: str, status: dict[str, Any]) -> str | No
 
 def run_job(ctx: Context, cronjob: str, budget: float) -> Result:
     """A Job made from the CronJob, waited for: ready once it completes."""
-    job = f"{cronjob}-pubkit-{ctx.now().strftime('%Y%m%d%H%M%S')}"[:63]
+    job = f"{cronjob}-pubrules-{ctx.now().strftime('%Y%m%d%H%M%S')}"[:63]
     ran = ctx.kubectl(["-n", ctx.namespace, "create", "job", f"--from=cronjob/{cronjob}", job])
     if ran.returncode != 0:
         return failed(f"a Job could not be made from CronJob {cronjob}", ran)

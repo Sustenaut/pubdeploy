@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Sustenaut/pubdeploy/blob/main/src/pubdeploy/schema.json",
-  "title": "pubkit.json's deploy block",
+  "title": "pubrules.json's deploy block",
   "description": "What a service needs before it deploys. Each need's own keys are its type's schema (pubdeploy types).",
   "type": "object",
   "x-phrase": "must be an object, with namespace and maybe host, workflow, gate, overlay, units, providers and needs",

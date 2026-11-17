@@ -1,11 +1,11 @@
-Feature: pubkit k8s preflight checks the Secrets a deploy reads before anything is applied
-  `pubkit k8s preflight` reads rendered manifests, collects every Secret
+Feature: pubrules k8s preflight checks the Secrets a deploy reads before anything is applied
+  `pubrules k8s preflight` reads rendered manifests, collects every Secret
   their pods read (env, envFrom, secret and projected volumes,
   imagePullSecrets, of containers and init containers) and reads each one
   through kubectl: it must be there with every key named, unless the
   reference is optional, and a value of a known shape (oauth2-proxy's
   cookie secret) must have it. It fails in seconds, naming the Secret, the
-  key and what reads it, and never prints a value. `pubkit k8s diagnose`
+  key and what reads it, and never prints a value. `pubrules k8s diagnose`
   shows why the pods of a failed rollout are not ready.
 
   Background:
@@ -126,7 +126,7 @@ Feature: pubkit k8s preflight checks the Secrets a deploy reads before anything 
     Then it fails
     And it prints "error: env OAUTH2_PROXY_CLIENT_SECRET of Deployment/proxy container oauth2-proxy names no key of its Secret"
 
-  Scenario: The preflight runs from its file alone, without pubkit installed
+  Scenario: The preflight runs from its file alone, without pubrules installed
     When I run the preflight's file alone, offline
     Then it succeeds
     And it prints "not read (offline), the manifests need the Secrets"

@@ -1,4 +1,4 @@
-"""The world `pubkit deploy` scenarios run in: the example service of
+"""The world `pubrules deploy` scenarios run in: the example service of
 tests/fixtures/deploy-app, copied, and fakes for everything a check
 touches. kubectl answers from namespaces of Secrets, service accounts,
 Deployments and CronJobs; the GitHub API from secrets, variables and
@@ -340,7 +340,7 @@ class World:
 
     def __init__(self, root: Path) -> None:
         self.root = root
-        self.config = json.loads((root / "pubkit.json").read_text())
+        self.config = json.loads((root / "pubrules.json").read_text())
         self.rendered = (root / "rendered.yaml").read_text()
         self.render_error: Stop | None = None
         self.cluster = good_cluster()
@@ -383,7 +383,7 @@ class World:
         return next(n for n in self.block["needs"] if n["type"] == kind)
 
     def save(self) -> None:
-        (self.root / "pubkit.json").write_text(json.dumps(self.config, indent=2))
+        (self.root / "pubrules.json").write_text(json.dumps(self.config, indent=2))
 
     def render(self) -> str:
         if self.render_error:
@@ -434,7 +434,7 @@ def world(tmp_path, monkeypatch, capsys):
     shutil.copytree(FIXTURE, root)
     w = World(root)
     monkeypatch.chdir(root)
-    monkeypatch.setenv("PUBKIT_ANY_VERSION", "1")
+    monkeypatch.setenv("PUBRULES_ANY_VERSION", "1")
 
     def context(root, config, offline, kubectl_command=None, zones_file=None, namespace=None, server=None,
                 unit=None):

@@ -124,7 +124,7 @@ class SignInClient(Base):
         reader = ctx.types.get("k8s.secret")
         if reader is None:
             return Result("unknown", f"Secret {secret} is not looked at without k8s.secret",
-                          fix="list pubsec in deploy.providers, as `pubkit sync` does")
+                          fix="list pubsec in deploy.providers, as `pubrules sync` does")
         held = reader.check(Need("k8s.secret", secret, {"keys": KEYS}), ctx)
         if held.state == "ready":
             return Result("ready", f"the {domain} client is registered, and Secret {secret} has its keys")

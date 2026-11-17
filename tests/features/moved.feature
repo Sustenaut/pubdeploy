@@ -1,4 +1,4 @@
-Feature: The checks of pubdeploy's code that were in pubkit's test_deploy_sync.py when the walk was pubkit's
+Feature: The checks of pubdeploy's code that were in pubrules's test_deploy_sync.py when the walk was pubrules's
   providers.bump, a type no installed package offers, the trigger rewrite,
   pubsec's types without pubsec, the provider contract and the
   sustenaut.walk hook.

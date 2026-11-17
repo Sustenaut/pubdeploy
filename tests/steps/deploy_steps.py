@@ -1,4 +1,4 @@
-"""The steps the pubkit deploy features share. pytest-bdd keeps a step in
+"""The steps the pubrules deploy features share. pytest-bdd keeps a step in
 the module that defines it, so each test_deploy_*.py takes them all with
 `from deploy_steps import *`, the fixtures they are kept as included."""
 
@@ -88,7 +88,7 @@ def reversed_needs(world):
     world.block["needs"].reverse()
 
 
-@given(parsers.parse('pubkit.json\'s github_app block names the app "{app}"'))
+@given(parsers.parse('pubrules.json\'s github_app block names the app "{app}"'))
 def github_app(world, app):
     upper = app.upper().replace("-", "_")
     world.config["github_app"] = {slot: {"from": f"{app}-{slot.replace('_', '-')}", "to": f"{upper}_{slot.upper()}"}
@@ -102,14 +102,14 @@ def only_secret(world, to):
 
 @given("the example service's managed files are in step")
 def in_step(world, capsys):
-    """pubkit init's files, then sync's. sync is given no --zones, so the
+    """pubrules init's files, then sync's. sync is given no --zones, so the
     host's zone is in no hosting block it reads."""
-    from pubkit.cli import main  # noqa: PLC0415
-    (world.root / "pubkit.json").unlink()
+    from pubrules.cli import main  # noqa: PLC0415
+    (world.root / "pubrules.json").unlink()
     assert main(["init", "--kind=service", "--project=example"]) == 0
     world.save()
     assert main(["sync"]) == 0
-    world.config = json.loads((world.root / "pubkit.json").read_text())  # with the pubsec sync listed
+    world.config = json.loads((world.root / "pubrules.json").read_text())  # with the pubsec sync listed
     world.outputs += capsys.readouterr()
     world.zones = None
 
@@ -659,7 +659,7 @@ def has_shape(world, need_id, shape):
 
 
 def builtin(kind: str):
-    """The type the walk loads: pubkit's own, or pubsec's."""
+    """The type the walk loads: pubrules's own, or pubsec's."""
     from pubdeploy.registry import types  # noqa: PLC0415
     return types()[kind]
 
@@ -793,7 +793,7 @@ def gh_set(world, kind, name):
 
 @then(parsers.parse('a Job was made from the CronJob "{name}"'))
 def job_made(world, name):
-    assert any(j.startswith(f"{name}-pubkit-") for j in world.cluster.get("jobs", [])), world.cluster.get("jobs")
+    assert any(j.startswith(f"{name}-pubrules-") for j in world.cluster.get("jobs", [])), world.cluster.get("jobs")
 
 
 @then(parsers.parse('stderr does not mention "{text}"'))
@@ -1042,7 +1042,7 @@ class FakeHeads:
 @pytest.fixture(autouse=True)
 def storage(world, monkeypatch):
     world.storage = {"signed_in": [], "files": [], "heads": {}, "moves": []}
-    world.env["PUBKIT_STORAGE_TOKEN"] = f"{CANARY}-storage-token"
+    world.env["PUBRULES_STORAGE_TOKEN"] = f"{CANARY}-storage-token"
     world.values.append(f"{CANARY}-storage-token")
     monkeypatch.setattr("pubdeploy.store.Heads", lambda base, tenant, token: FakeHeads(world, base, tenant, token))
 
@@ -1064,7 +1064,7 @@ def storage_refuses(world):
 
 @given("there is no storage token")
 def no_storage_token(world):
-    del world.env["PUBKIT_STORAGE_TOKEN"]
+    del world.env["PUBRULES_STORAGE_TOKEN"]
 
 
 @then(parsers.parse('storage was given a deploy-journal/2 document as a file of "{tenant}"'))

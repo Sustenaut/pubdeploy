@@ -3,7 +3,7 @@ Feature: The needs a deploy block implies, and the order they are walked in
   namespace, host and gate, from the secrets, github_app and variables
   blocks, from each need's secret, and from the Secrets the rendered
   manifests read. They are walked each after the needs it waits for, by
-  rules pubkit has and by each need's after, ties broken by id, so the
+  rules pubrules has and by each need's after, ties broken by id, so the
   order is the same on every run.
 
   Background:
@@ -88,7 +88,7 @@ Feature: The needs a deploy block implies, and the order they are walked in
     And the plan has no "service.health:example"
 
   Scenario: A GitHub App's slots are needs of their own
-    Given pubkit.json's github_app block names the app "example-app"
+    Given pubrules.json's github_app block names the app "example-app"
     When I load the plan
     Then its needs include
       | id                                     | implied by |

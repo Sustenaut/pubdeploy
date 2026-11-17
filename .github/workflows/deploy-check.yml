@@ -24,7 +24,7 @@
 # such as a secret its token may not list, is unknown, in the journal, and
 # fails nothing (--tolerate-unknown); missing, drift or blocked fails the run.
 #
-# `zones` is the pubkit.json whose hosting block keeps the host's zone, in
+# `zones` is the pubrules.json whose hosting block keeps the host's zone, in
 # this repository or a checkout beside it (`zones-repository` checks one out
 # there). `journal` is the storage service's address; the job signs in to it
 # with its OIDC token, for the audience `storage-audience` (default the
@@ -35,7 +35,7 @@ on:
   workflow_call:
     inputs:
       zones:
-        description: The pubkit.json whose hosting block keeps the zone, such as ../infra/pubkit.json.
+        description: The pubrules.json whose hosting block keeps the zone, such as ../infra/pubrules.json.
         type: string
         default: ''
       zones-repository:
@@ -96,13 +96,13 @@ jobs:
           ZONES_REPOSITORY: ${{ inputs.zones-repository }}
         run: |
           fail() { echo "::error::$1"; exit 1; }
-          [[ -x ./pubdeploy ]] || fail "this repository has no ./pubdeploy to walk with: run pubkit sync"
-          [[ -x ./pubsec ]] || fail "this repository has no ./pubsec, whose types the walk loads: run pubkit sync"
+          [[ -x ./pubdeploy ]] || fail "this repository has no ./pubdeploy to walk with: run pubrules sync"
+          [[ -x ./pubsec ]] || fail "this repository has no ./pubsec, whose types the walk loads: run pubrules sync"
           [[ -n "$SERVER" ]] || fail "the variable SUSTENAUT_SERVER is not set: there is no server to walk"
           [[ -n "$KNOWN_HOSTS" ]] || fail "the variable SUSTENAUT_KNOWN_HOSTS is not set: the server is never asked unpinned"
           [[ "$HAS_KEY" == true ]] || fail "the secret SUSTENAUT_DEPLOY_SSH_KEY is not set"
           if [[ -n "$ZONES_REPOSITORY" ]]; then
-            # Beside this checkout, where --zones may read a pubkit.json.
+            # Beside this checkout, where --zones may read a pubrules.json.
             mv .zones "../${ZONES_REPOSITORY#*/}"
           fi
 
@@ -140,7 +140,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ZONES: ${{ inputs.zones }}
           JOURNAL: ${{ inputs.journal }}
-          PUBKIT_STORAGE_AUDIENCE: ${{ inputs.storage-audience }}
+          PUBRULES_STORAGE_AUDIENCE: ${{ inputs.storage-audience }}
         run: |
           ssh_dir="$RUNNER_TEMP/deploy-ssh"
           mkdir -p "$ssh_dir"

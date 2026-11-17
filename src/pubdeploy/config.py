@@ -1,8 +1,8 @@
-"""What pubdeploy reads of a repository's pubkit.json beside the deploy
+"""What pubdeploy reads of a repository's pubrules.json beside the deploy
 block: the file itself, whose owner's pubdeploy a workflow calls, and the
-`github_app` and `secrets` blocks, which imply the github.* needs. pubkit
-validates those blocks in `pubkit sync`; this is the same reading, kept here
-so pubdeploy imports nothing of pubkit's."""
+`github_app` and `secrets` blocks, which imply the github.* needs. pubrules
+validates those blocks in `pubrules sync`; this is the same reading, kept here
+so pubdeploy imports nothing of pubrules's."""
 
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-CONFIG = "pubkit.json"
+CONFIG = "pubrules.json"
 # The owner of pubdeploy's repository, whose workflows a repository calls;
-# pubkit.json's `workflows_owner` names another.
+# pubrules.json's `workflows_owner` names another.
 OWNER = "Sustenaut"
 OWNER_NAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?")
 COMMIT = re.compile(r"[0-9a-f]{40}")
@@ -32,24 +32,24 @@ def read_config(root: Path) -> dict[str, Any]:
     return config
 
 
-# A copy of pubkit's refs.owner.
+# A copy of pubrules's refs.owner.
 def owner(config: dict[str, Any] | None) -> str:
-    """The owner pubkit.json's `workflows_owner` names, or OWNER."""
+    """The owner pubrules.json's `workflows_owner` names, or OWNER."""
     given = (config or {}).get("workflows_owner", OWNER)
     if not isinstance(given, str) or not OWNER_NAME.fullmatch(given):
-        sys.exit(f"pubdeploy: pubkit.json's workflows_owner must be a GitHub owner, such as "
+        sys.exit(f"pubdeploy: pubrules.json's workflows_owner must be a GitHub owner, such as "
                  f'"{OWNER}", not {given!r}')
     return given
 
 
-# A copy of pubkit's refs.ref.
+# A copy of pubrules's refs.ref.
 def ref(version: str, commit: str | None) -> str:
     """What follows `@` in a pin of `version`: its commit, with the version
     in a comment, or the tag when the commit is unknown."""
     return f"{commit} # v{version}" if commit else f"v{version}"
 
 
-# After pubkit's refs.release_commit.
+# After pubrules's refs.release_commit.
 def release_commit() -> str | None:
     """The commit of this pubdeploy's release tag, which wheel.yml writes into
     the wheel as `release-commit`; None from a source tree.
@@ -68,7 +68,7 @@ def release_commit() -> str | None:
     return given
 
 
-# The github_app and secrets blocks: after pubkit's secrets_config (plan, config_problems).
+# The github_app and secrets blocks: after pubrules's secrets_config (plan, config_problems).
 APP = "github_app"
 OTHERS = "secrets"
 KINDS = {"secret", "variable"}
@@ -102,8 +102,8 @@ def _entry_sound(entry: Any) -> bool:
 
 
 def secrets_sound(config: dict[str, Any]) -> bool:
-    """Whether both blocks read as `pubkit sync` takes them, no name used twice.
-    pubkit says what is wrong with them; an unsound block implies no need."""
+    """Whether both blocks read as `pubrules sync` takes them, no name used twice.
+    pubrules says what is wrong with them; an unsound block implies no need."""
     if APP in config:
         block = config[APP]
         apps = block if isinstance(block, list) else [block]
@@ -125,7 +125,7 @@ def plan(config: dict[str, Any]) -> list[dict[str, Any]]:
     return out + [{**entry, "check": None} for entry in config.get(OTHERS, [])]
 
 
-# A copy of pubkit's paths.confined.
+# A copy of pubrules's paths.confined.
 def confined(path: Path | str, what: str, also: tuple[Path, ...] = ()) -> Path:
     """`path`, resolved, when it lies in the working directory, a temporary
     directory, or one of `also`; otherwise pubdeploy stops, naming `what`."""

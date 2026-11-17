@@ -1,4 +1,4 @@
-"""The tools `pubkit deploy check` reaches outside a test's fakes: kustomize,
+"""The tools `pubrules deploy check` reaches outside a test's fakes: kustomize,
 kubectl, HTTP, dig and git, each given a stand-in, never the real one, and
 the command run whole, as a person runs it."""
 
@@ -198,12 +198,12 @@ def the_walk_takes_zones_more_than_once(tmp_path, monkeypatch):
     from pubdeploy import cli
     for owner in ("a", "b"):
         (tmp_path / owner).mkdir()
-        (tmp_path / owner / "pubkit.json").write_text("{}")
+        (tmp_path / owner / "pubrules.json").write_text("{}")
     (tmp_path / "svc").mkdir()
     monkeypatch.chdir(tmp_path / "svc")
     seen = {}
     monkeypatch.setattr("pubdeploy.run_walk", lambda root, offline, as_json, kubectl, zones, *a, **k: seen.setdefault("z", zones) and 0)
-    cli.main(["walk", "--zones", "../a/pubkit.json", "--zones", "../b/pubkit.json"])
+    cli.main(["walk", "--zones", "../a/pubrules.json", "--zones", "../b/pubrules.json"])
     assert [z.parent.name for z in seen["z"]] == ["a", "b"]
 
 
@@ -211,7 +211,7 @@ def the_walk_takes_zones_more_than_once(tmp_path, monkeypatch):
 def the_journal_says_where_the_walk_ran(tmp_path):
     """Every case of the parametrized test this was, in turn."""
     for case0 in [({}, "laptop"), ({"GITHUB_ACTIONS": "true", "GITHUB_ACTOR": "someone"},
-                                                               "actions"), ({"PUBKIT_PLANE": "1", "PUBKIT_WALK_BY": "schedule"}, "plane")]:
+                                                               "actions"), ({"PUBRULES_PLANE": "1", "PUBRULES_WALK_BY": "schedule"}, "plane")]:
         case0 = case0.values if type(case0).__name__ == "ParameterSet" else case0
         case_dir = tmp_path / f"case-{len(list(tmp_path.iterdir()))}"
         case_dir.mkdir()
@@ -221,12 +221,12 @@ def the_journal_says_where_the_walk_ran(tmp_path):
 def _case_the_journal_says_where_the_walk_ran(tmp_path, env, origin):
     root = tmp_path / "repo"
     shutil.copytree(FIXTURE, root)
-    config = json.loads((root / "pubkit.json").read_text())
+    config = json.loads((root / "pubrules.json").read_text())
     ctx = Context(root=root, config=config, block=config["deploy"], namespace="example", env=env, offline=True,
                   rendered=lambda: (root / "rendered.yaml").read_text())
     journal = deploy.check(deploy.load(root, config, ctx), ctx)
     assert journal.walk["from"] == origin
-    assert journal.walk["by"] == env.get("PUBKIT_WALK_BY", env.get("GITHUB_ACTOR", journal.walk["by"]))
+    assert journal.walk["by"] == env.get("PUBRULES_WALK_BY", env.get("GITHUB_ACTOR", journal.walk["by"]))
 
 
 @then("a check that returns no result is unknown")
@@ -245,7 +245,7 @@ def a_check_that_returns_no_result_is_unknown():
 @then("every builtin type is one the registry takes")
 def every_builtin_type_is_one_the_registry_takes():
     from pubdeploy.registry import BUILTIN, type_problems  # noqa: PLC0415
-    # pubkit's own may be one word, as upstream is.
+    # pubrules's own may be one word, as upstream is.
     found = {kind.type: [p for p in type_problems(kind) if "dotted" not in p] for kind in BUILTIN}
     assert found == {kind.type: [] for kind in BUILTIN}
 
@@ -278,41 +278,41 @@ def deploy_check_runs_whole(tmp_path, run):
     shutil.copytree(FIXTURE, root)
     bin_dir = tmp_path / "bin"
     program(bin_dir, "kustomize", f"print(open({str(root / 'rendered.yaml')!r}).read())")
-    zones = tmp_path / "infra" / "pubkit.json"
+    zones = tmp_path / "infra" / "pubrules.json"
     zones.parent.mkdir()
     shutil.move(root / "zones.json", zones)
-    from conftest import pubdeploy as pubkit  # noqa: PLC0415
-    env = {"PATH": f"{bin_dir}:{os.environ['PATH']}", "PUBKIT_ANY_VERSION": "1"}
-    done = run(pubkit(), "check", "--offline", "--zones", str(zones), cwd=root, env=env)
+    from conftest import pubdeploy as pubrules  # noqa: PLC0415
+    env = {"PATH": f"{bin_dir}:{os.environ['PATH']}", "PUBRULES_ANY_VERSION": "1"}
+    done = run(pubrules(), "check", "--offline", "--zones", str(zones), cwd=root, env=env)
     assert done.code == 0, done.describe()
     assert "ready   k8s.secrets-declared:example" in done.stdout
-    done = run(pubkit(), "check", "--offline", "--zones", str(tmp_path / "gone" / "pubkit.json"),
+    done = run(pubrules(), "check", "--offline", "--zones", str(tmp_path / "gone" / "pubrules.json"),
                cwd=root, env=env)
     assert done.code == 2 and "--zones" in done.stderr
 
 
-@then("deploy check reads only a pubkit json beside the repository")
-def deploy_check_reads_only_a_pubkit_json_beside_the_repository(tmp_path, run):
+@then("deploy check reads only a pubrules json beside the repository")
+def deploy_check_reads_only_a_pubrules_json_beside_the_repository(tmp_path, run):
     """Every case of the parametrized test this was, in turn."""
-    for case0 in [("../infra/zones.json", "must be a repository's pubkit.json"),
-                                           ("/pubkit.json", "must be in the working directory")]:
+    for case0 in [("../infra/zones.json", "must be a repository's pubrules.json"),
+                                           ("/pubrules.json", "must be in the working directory")]:
         case0 = case0.values if type(case0).__name__ == "ParameterSet" else case0
         case_dir = tmp_path / f"case-{len(list(tmp_path.iterdir()))}"
         case_dir.mkdir()
-        _case_deploy_check_reads_only_a_pubkit_json_beside_the_repository(path=case0[0], why=case0[1], tmp_path=case_dir, run=run)
+        _case_deploy_check_reads_only_a_pubrules_json_beside_the_repository(path=case0[0], why=case0[1], tmp_path=case_dir, run=run)
 
 
-def _case_deploy_check_reads_only_a_pubkit_json_beside_the_repository(tmp_path, run, path, why):
+def _case_deploy_check_reads_only_a_pubrules_json_beside_the_repository(tmp_path, run, path, why):
     root = tmp_path / "repo"
     shutil.copytree(FIXTURE, root)
-    from conftest import pubdeploy as pubkit  # noqa: PLC0415
-    done = run(pubkit(), "check", "--offline", "--zones", path, cwd=root, env={"PUBKIT_ANY_VERSION": "1"})
+    from conftest import pubdeploy as pubrules  # noqa: PLC0415
+    done = run(pubrules(), "check", "--offline", "--zones", path, cwd=root, env={"PUBRULES_ANY_VERSION": "1"})
     assert done.code != 0 and why in done.stderr, done.describe()
 
 
-@then("a providers result need not be pubkits")
-def a_providers_result_need_not_be_pubkits():
-    """An out-of-tree type imports nothing of pubkit's: any object with
+@then("a providers result need not be pubruless")
+def a_providers_result_need_not_be_pubruless():
+    """An out-of-tree type imports nothing of pubrules's: any object with
     state, summary, fix and details is a result, for its check and its fulfil."""
     from pubdeploy.model import Need  # noqa: PLC0415
     from pubdeploy.walk import fulfil, walk  # noqa: PLC0415

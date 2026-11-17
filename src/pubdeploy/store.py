@@ -1,11 +1,11 @@
-"""Writing a walk's journal to storage: `walk --journal URL` (or PUBKIT_JOURNAL_URL).
+"""Writing a walk's journal to storage: `walk --journal URL` (or PUBRULES_JOURNAL_URL).
 
 The deploy-journal/2 document is uploaded as a file of the tenant `plane`,
 then the head OWNER.REPO.UNIT moved to it, If-Match the head's
 ETag, so two walks never lose one's journal: a move another walk won is
-tried once more, on the head it left. The token is PUBKIT_STORAGE_TOKEN; in
+tried once more, on the head it left. The token is PUBRULES_STORAGE_TOKEN; in
 GitHub Actions, without it, the job's OIDC token for the storage's audience
-(PUBKIT_STORAGE_AUDIENCE, else the URL's host), as board-publish signs in.
+(PUBRULES_STORAGE_AUDIENCE, else the URL's host), as board-publish signs in.
 A laptop has neither, and writes no journal. A journal that could not be
 written is said, in one line, and never fails the walk.
 """
@@ -29,7 +29,7 @@ FLAT = re.compile(r"[^a-z0-9._-]")
 AGENT = "pubdeploy-journal"
 
 
-# A copy of pubkit's board_publish.Refused.
+# A copy of pubrules's board_publish.Refused.
 class Refused(Exception):
     """Storage's answer to a request it didn't carry out."""
 
@@ -38,7 +38,7 @@ class Refused(Exception):
         super().__init__(f"storage said {status}: {body.decode('utf-8', 'replace')[:300]}")
 
 
-# A copy of pubkit's board_publish.oidc_token.
+# A copy of pubrules's board_publish.oidc_token.
 def oidc_token(audience: str) -> str:
     url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
     separator = "&" if "?" in url else "?"
@@ -49,7 +49,7 @@ def oidc_token(audience: str) -> str:
 
 
 class Heads:
-    """A storage tenant's files and heads, a head by its path: after pubkit's
+    """A storage tenant's files and heads, a head by its path: after pubrules's
     board_publish.Storage."""
 
     def __init__(self, base: str, tenant: str, token: str):
@@ -94,10 +94,10 @@ class Heads:
 
 
 def token(url: str, env: Mapping[str, str]) -> str | None:
-    if env.get("PUBKIT_STORAGE_TOKEN"):
-        return env["PUBKIT_STORAGE_TOKEN"]
+    if env.get("PUBRULES_STORAGE_TOKEN"):
+        return env["PUBRULES_STORAGE_TOKEN"]
     if env.get("ACTIONS_ID_TOKEN_REQUEST_URL") and env.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN"):
-        return oidc_token(env.get("PUBKIT_STORAGE_AUDIENCE") or urllib.parse.urlsplit(url).hostname or "")
+        return oidc_token(env.get("PUBRULES_STORAGE_AUDIENCE") or urllib.parse.urlsplit(url).hostname or "")
     return None
 
 
@@ -114,7 +114,7 @@ def write(url: str, document: dict[str, Any], env: Mapping[str, str], storage: A
         if storage is None:
             given = token(url, env)
             if given is None:
-                return "deploy: no journal written: no storage token here (PUBKIT_STORAGE_TOKEN, or a GitHub Actions job's)"
+                return "deploy: no journal written: no storage token here (PUBRULES_STORAGE_TOKEN, or a GitHub Actions job's)"
             storage = Heads(url, TENANT, given)
         new = storage.upload(json.dumps(document, indent=2).encode())
         for _ in range(2):

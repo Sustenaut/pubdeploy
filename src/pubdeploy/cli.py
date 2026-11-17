@@ -7,11 +7,11 @@ and making it; and the checks a deploy to Kubernetes runs.
     pubdeploy check ...                  walk without --fulfil
     pubdeploy types                      every need type, and its keys
     pubdeploy k8s preflight|diagnose     before an apply, and after a failed rollout
-    pubdeploy sync-check [--check]       what `pubkit sync` runs of pubdeploy's
-    pubdeploy bump                       what `pubkit bump` runs of pubdeploy's
+    pubdeploy sync-check [--check]       what `pubrules sync` runs of pubdeploy's
+    pubdeploy bump                       what `pubrules bump` runs of pubdeploy's
 
-A repository runs its pinned pubdeploy as ./pubdeploy, which `pubkit sync`
-writes beside ./pubkit where pubkit.json has a deploy block, with each
+A repository runs its pinned pubdeploy as ./pubdeploy, which `pubrules sync`
+writes beside ./pubrules where pubrules.json has a deploy block, with each
 deploy.providers wheel, so the need types other packages offer (pubsec's,
 pg-backup's) load. It runs in the repository's root.
 """
@@ -55,17 +55,17 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--server", metavar="HOST", help="the admin channel: kubectl and commands over ssh root@HOST "
                                                          "(default SUSTENAUT_SERVER, without --kubectl)")
         p.add_argument("--zones", type=Path, metavar="PATH", action="append",
-                       help="a pubkit.json, here or in a checkout beside this one, whose hosting block "
+                       help="a pubrules.json, here or in a checkout beside this one, whose hosting block "
                             "keeps the zone of a unit's host; one per owner whose zones the hosts are in")
-        p.add_argument("--journal", metavar="URL", help="also write the journal to storage (or PUBKIT_JOURNAL_URL)")
+        p.add_argument("--journal", metavar="URL", help="also write the journal to storage (or PUBRULES_JOURNAL_URL)")
         p.add_argument("--namespace", metavar="NS", help="another namespace than the unit's")
     commands.add_parser("types", help="every need type pubdeploy and the installed packages offer, and its keys")
     commands.add_parser("k8s", help="check the Secrets rendered manifests read before a deploy, or show "
                                     "why a rollout failed (pubdeploy k8s --help)")
-    p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubkit sync runs")
+    p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubrules sync runs")
     p.add_argument("--check", action="store_true", help="fail when the deploy block is wrong")
     commands.add_parser("bump", help="move deploy.providers and the uses of pubdeploy's workflows to the "
-                                     "latest releases: what pubkit bump runs")
+                                     "latest releases: what pubrules bump runs")
     args = parser.parse_args(given)
     root = Path.cwd()
     if args.command == "types":
@@ -85,12 +85,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     from . import run_walk  # noqa: PLC0415
     from .config import confined  # noqa: PLC0415
-    # --zones is another repository's pubkit.json, so it may be in a
-    # checkout beside this one: a pubkit.json in the parent directory's tree.
+    # --zones is another repository's pubrules.json, so it may be in a
+    # checkout beside this one: a pubrules.json in the parent directory's tree.
     zones = [confined(z, "the --zones file", also=(root.parent,)) for z in args.zones or []] or None
     for z, given in zip(zones or [], args.zones or []):
-        if z.name != "pubkit.json":
-            sys.exit(f"pubdeploy: the --zones file ({given}) must be a repository's pubkit.json")
+        if z.name != "pubrules.json":
+            sys.exit(f"pubdeploy: the --zones file ({given}) must be a repository's pubrules.json")
     return run_walk(root, args.offline, args.json, args.kubectl, zones, args.namespace,
                     fulfil=getattr(args, "fulfil", False), unit=args.unit, server=args.server,
                     yes=getattr(args, "yes", False), journal_url=args.journal,

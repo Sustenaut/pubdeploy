@@ -1,4 +1,4 @@
-"""Steps for pubkit deploy check, against fakes of everything it touches: the shared ones are deploy_steps.py's."""
+"""Steps for pubrules deploy check, against fakes of everything it touches: the shared ones are deploy_steps.py's."""
 
 from __future__ import annotations
 

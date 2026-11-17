@@ -5,14 +5,14 @@ fulfil the walk calls, not a class. A provider need import nothing of
 pubdeploy's: any result with state, summary, fix and details serves.
 
 pubsec offers the types that hold a secret's value (PUBSEC_TYPES),
-which pubkit had built in until pubsec took them.
+which pubrules had built in until pubsec took them.
 
 A type is checked as it loads: its name is dotted lower-case words, its
 schema an object schema that takes no key it does not name, its budget more
 than 0 and at most 10 seconds, its grade one of auto, propose, human and
 none, and its fulfil_budget, when it gives one, more than 0 and at most 900
 seconds. One that fails, or does not load, is left out with a warning, and
-never stops `pubkit sync --check`. A type a second package offers again is
+never stops `pubrules sync --check`. A type a second package offers again is
 left out, naming both.
 """
 
@@ -110,7 +110,7 @@ def lacking(needs: Any, types: dict[str, NeedType]) -> list[str]:
     if not missing:
         return []
     return [f"deploy: {', '.join(missing)} {'is' if len(missing) == 1 else 'are'} {PUBSEC}'s, which is not installed: "
-            f"list {PUBSEC} in deploy.providers, as `pubkit sync` does, and run ./pubdeploy, which runs it"]
+            f"list {PUBSEC} in deploy.providers, as `pubrules sync` does, and run ./pubdeploy, which runs it"]
 
 
 def types() -> dict[str, NeedType]:

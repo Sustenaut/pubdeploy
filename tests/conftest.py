@@ -1,5 +1,5 @@
 """pubdeploy's suite. The steps it does not define here (`it succeeds`, `it
-prints ...`) are pubkit's plugin's.
+prints ...`) are pubrules's plugin's.
 
 Steps and fixtures more than one steps module uses live here: the scratch
 repository, running the `pubdeploy` command in it, and its files. pytest-bdd

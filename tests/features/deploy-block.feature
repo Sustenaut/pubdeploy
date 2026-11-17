@@ -1,10 +1,10 @@
-Feature: pubkit sync --check checks pubkit.json's deploy block
+Feature: pubrules sync --check checks pubrules.json's deploy block
   The deploy block names what a service needs before it deploys: its
   namespace, and maybe its host, deploy workflow, gate variable, overlay,
-  and needs nothing implies. `pubkit sync --check` reads the block as it
+  and needs nothing implies. `pubrules sync --check` reads the block as it
   reads the others, and says what is wrong with it in one phrase per
   problem; then it runs the offline checks, so a block that disagrees with
-  the manifests fails CI. A need type a package offers that pubkit cannot
+  the manifests fails CI. A need type a package offers that pubrules cannot
   use is left out with a warning, and fails nothing.
 
   Background:
@@ -81,7 +81,7 @@ Feature: pubkit sync --check checks pubkit.json's deploy block
     When I check the deploy block
     Then the only problem is "deploy: workflow deploy.yml is not in .github/workflows"
 
-  Scenario: A need of a type pubkit does not know is named, with the types it knows
+  Scenario: A need of a type pubrules does not know is named, with the types it knows
     Given the deploy block also needs {"type": "example.thing", "name": "one"}
     When I check the deploy block
     Then the only problem starts "deploy: needs[6]: example.thing is no type of need pubdeploy knows; it knows auth.sign-in-client, bitwarden.generated, bitwarden.secret,"
@@ -176,7 +176,7 @@ Feature: pubkit sync --check checks pubkit.json's deploy block
     And the listing shows "k8s.namespace" graded "auto", from "pubdeploy", taking "-"
     And it prints "22 types; every need also takes type, name, after and unit"
 
-  Scenario: A package offering a type pubkit has is left out, naming both
+  Scenario: A package offering a type pubrules has is left out, naming both
     Given the package "example-needs" offers the need type "k8s.namespace"
     When I run pubdeploy "types"
     Then it succeeds
@@ -216,4 +216,4 @@ Feature: pubkit sync --check checks pubkit.json's deploy block
     Given the deploy block is absent
     When I run pubdeploy "check"
     Then the exit code is 2
-    And stderr mentions "pubdeploy: deploy: pubkit.json has no deploy block"
+    And stderr mentions "pubdeploy: deploy: pubrules.json has no deploy block"

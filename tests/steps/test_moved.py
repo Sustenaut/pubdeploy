@@ -1,5 +1,5 @@
-"""The checks of pubdeploy's code that were in pubkit's test_deploy_sync.py
-when the walk was pubkit's: providers.bump, a type no installed package
+"""The checks of pubdeploy's code that were in pubrules's test_deploy_sync.py
+when the walk was pubrules's: providers.bump, a type no installed package
 offers, the trigger rewrite, pubsec's types without pubsec, the provider
 contract and the sustenaut.walk hook."""
 
@@ -47,7 +47,7 @@ jobs:
 @then("bump moves a provider to its latest release")
 def bump_moves_a_provider_to_its_latest_release(tmp_path):
     newer = WHEEL.replace("1.0.0", "1.1.0")
-    (tmp_path / "pubkit.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
+    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
         {"distribution": "example-needs", "wheel": WHEEL, "sha256": "0" * 64}]}}, indent=2))
 
     def gh(method, path, body):
@@ -55,8 +55,8 @@ def bump_moves_a_provider_to_its_latest_release(tmp_path):
         return {"assets": [{"name": "example_needs-1.1.0.tar.gz", "browser_download_url": "x"},
                            {"name": "example_needs-1.1.0-py3-none-any.whl", "browser_download_url": newer,
                             "digest": "sha256:" + "1" * 64}]}
-    assert providers.bump(tmp_path, gh) == ["updated  pubkit.json (deploy.providers example-needs: 1.1.0)"]
-    given = json.loads((tmp_path / "pubkit.json").read_text())["deploy"]["providers"][0]
+    assert providers.bump(tmp_path, gh) == ["updated  pubrules.json (deploy.providers example-needs: 1.1.0)"]
+    given = json.loads((tmp_path / "pubrules.json").read_text())["deploy"]["providers"][0]
     assert given == {"distribution": "example-needs", "wheel": newer, "sha256": "1" * 64}
     assert providers.bump(tmp_path, lambda *_: {"assets": [{"name": "example_needs-1.1.0-py3-none-any.whl",
                                                            "browser_download_url": newer, "digest": "sha256:1"}]}) == []
@@ -64,12 +64,12 @@ def bump_moves_a_provider_to_its_latest_release(tmp_path):
 
 @then("bump leaves a provider without a sha256 saying so")
 def bump_leaves_a_provider_without_a_sha256_saying_so(tmp_path):
-    (tmp_path / "pubkit.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
+    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
         {"distribution": "example-needs", "wheel": WHEEL}]}}, indent=2))
-    before = (tmp_path / "pubkit.json").read_text()
+    before = (tmp_path / "pubrules.json").read_text()
     lines = providers.bump(tmp_path, lambda *_: (_ for _ in ()).throw(AssertionError("no release is read")))
     assert lines == ["left     deploy.providers example-needs: it has no sha256 to move; give it the wheel's sha256"]
-    assert (tmp_path / "pubkit.json").read_text() == before
+    assert (tmp_path / "pubrules.json").read_text() == before
 
 
 @then("a type no installed package offers names the providers")
@@ -116,11 +116,11 @@ def _case_the_trigger_rewrite_takes_the_short_forms(text):
 def without_pubsec_its_types_name_it():
     own = {kind.type: kind for kind in BUILTIN}
     assert need_problems({"type": "bitwarden.secret", "name": "x"}, 0, own, FIXTURE) == [
-        "deploy: needs[0]: bitwarden.secret is pubsec's: list pubsec in deploy.providers, as `pubkit sync` does, "
+        "deploy: needs[0]: bitwarden.secret is pubsec's: list pubsec in deploy.providers, as `pubrules sync` does, "
         "and run ./pubdeploy, which runs it"]
     assert lacking([Need("k8s.secret", "x", {}), Need("github.secret", "Y", {})], own) == [
         "deploy: github.secret, k8s.secret are pubsec's, which is not installed: list pubsec in deploy.providers, "
-        "as `pubkit sync` does, and run ./pubdeploy, which runs it"]
+        "as `pubrules sync` does, and run ./pubdeploy, which runs it"]
 
 
 # The Context's names a provider may use, which the README lists under

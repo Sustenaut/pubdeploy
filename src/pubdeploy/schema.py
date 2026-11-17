@@ -1,5 +1,5 @@
 """The deploy block's schema, and what is wrong with a block: phrases, one
-per problem, in the voice `pubkit sync` prints the other blocks' in.
+per problem, in the voice `pubrules sync` prints the other blocks' in.
 
 The block's own keys are in schema.json, shipped with pubdeploy; each need's
 keys are its type's schema (`pubdeploy types` lists them), with the keys
@@ -178,7 +178,7 @@ def need_problems(entry: Any, i: int, types: dict[str, NeedType], root: Path,
         from .registry import PUBSEC, PUBSEC_TYPES  # noqa: PLC0415
         if entry["type"] in PUBSEC_TYPES and PUBSEC not in (providers or []):
             return [f"deploy: needs[{i}]: {entry['type']} is {PUBSEC}'s: list {PUBSEC} in deploy.providers, "
-                    f"as `pubkit sync` does, and run ./pubdeploy, which runs it"]
+                    f"as `pubrules sync` does, and run ./pubdeploy, which runs it"]
         if providers:
             return [f"deploy: needs[{i}]: {entry['type']} is no type of need pubdeploy or an installed package "
                     f"offers; it would be {listed(providers, 'or')}'s, of deploy.providers, which ./pubdeploy runs "
@@ -199,7 +199,7 @@ def need_problems(entry: Any, i: int, types: dict[str, NeedType], root: Path,
 
 
 def problems(config: dict[str, Any], root: Path, types: dict[str, NeedType] | None = None) -> list[str]:
-    """What is wrong with pubkit.json's deploy block: phrases, none when it is sound.
+    """What is wrong with pubrules.json's deploy block: phrases, none when it is sound.
     It opens no file but to see that the workflow, the overlay and each
     k8s.manifests path are there."""
     if types is None:
