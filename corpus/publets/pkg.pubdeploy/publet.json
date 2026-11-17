@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.4.3 is released as v0.4.3 from commit d4b33cfbebde950991f873bad78cbd735b94a854.",
+      "content": "pubdeploy 0.4.4 is released as v0.4.4 from commit 5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.4.3",
+            "0.4.4",
             "pubdeploy --version",
-            "pubdeploy 0.4.3",
-            "v0.4.3",
-            "d4b33cfbebde950991f873bad78cbd735b94a854"
+            "pubdeploy 0.4.4",
+            "v0.4.4",
+            "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
           ]
         ]
       },
-      "scope": "the published release v0.4.3 of pubdeploy",
+      "scope": "the published release v0.4.4 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "d4b33cfbebde950991f873bad78cbd735b94a854"
+          "revision": "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.4.3 was released on 2026-11-16 from commit d4b33cfbebde950991f873bad78cbd735b94a854 with these changes.",
+      "content": "pubdeploy 0.4.4 was released on 2026-11-17 from commit 5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d with these changes.",
       "data": {
         "columns": [
           {
@@ -58,23 +58,27 @@
         "rows": [
           [
             "added",
-            "k8s.jwks takes keys: the number of signing keys the cluster must publish (2: one signs, the other is its fallback); fewer is drift"
+            "bitwarden.adopt is one of pubsec's types, so a block naming it without pubsec in deploy.providers says so"
+          ],
+          [
+            "added",
+            "k8s.job-once: a one-off Job (a backfill, a migration) made from a CronJob's template or a manifest, with args and a timeout, run once; ready when it completed, unknown while it runs, drift when it failed, made again only with rerun: if-failed, and the plan names the Job a rerun deletes"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.4.3 of pubdeploy",
+      "scope": "the published release v0.4.4 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "d4b33cfbebde950991f873bad78cbd735b94a854"
+          "revision": "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
         }
       ]
     }
   },
-  "created": "2026-11-16T00:00:00Z",
+  "created": "2026-11-17T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
