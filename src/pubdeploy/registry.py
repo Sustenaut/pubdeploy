@@ -4,7 +4,7 @@ naming an object with what model.NeedType has: an instance, whose check and
 fulfil the walk calls, not a class. A provider need import nothing of
 pubdeploy's: any result with state, summary, fix and details serves.
 
-pubsec offers the seven types that hold a secret's value (PUBSEC_TYPES),
+pubsec offers the types that hold a secret's value (PUBSEC_TYPES),
 which pubkit had built in until pubsec took them.
 
 A type is checked as it loads: its name is dotted lower-case words, its
@@ -26,7 +26,7 @@ from typing import Any
 from .model import GRADES, NeedType
 from .types.auth import SignInClient
 from .types.github import VariableEntry
-from .types.k8s import CronJob, Jwks, Manifests, Namespace, SecretsDeclared
+from .types.k8s import CronJob, JobOnce, Jwks, Manifests, Namespace, SecretsDeclared
 from .types.net import Health, Site, Tenant, Upstream
 from .types.rollout import Gate, Rollout
 
@@ -34,14 +34,14 @@ GROUP = "sustenaut.needs"
 TYPE = re.compile(r"[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+")
 LONGEST = 10.0
 LONGEST_FULFIL = 900.0
-BUILTIN: tuple[NeedType, ...] = (Namespace(), SecretsDeclared(), Manifests(), CronJob(), Jwks(), VariableEntry(), Gate(),
+BUILTIN: tuple[NeedType, ...] = (Namespace(), SecretsDeclared(), Manifests(), CronJob(), JobOnce(), Jwks(), VariableEntry(), Gate(),
                                  Upstream(), Site(), Tenant(), Rollout(), Health(), SignInClient())
 PUBDEPLOY = "pubdeploy"
 # The types that hold a secret's value, which pubsec offers: the walk implies
 # several (a secret's k8s.secret, the secrets block's github.*), so a plan
 # with one needs pubsec installed, as deploy.providers lists it.
 PUBSEC = "pubsec"
-PUBSEC_TYPES = ("bitwarden.generated", "bitwarden.secret", "gcp.service-account-key", "github.deploy-settings",
+PUBSEC_TYPES = ("bitwarden.adopt", "bitwarden.generated", "bitwarden.secret", "gcp.service-account-key", "github.deploy-settings",
                 "github.secret", "github.variable", "k8s.secret")
 
 

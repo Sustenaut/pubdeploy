@@ -311,15 +311,17 @@ does, type by type:
 | k8s.namespace | `sustenaut-app NS` on the server | the admin channel |
 | k8s.manifests | `kubectl apply --server-side --force-conflicts -f -` of the file, each object in the namespace it names (fields applied client-side before move to server-side ownership); its check also runs `kubectl diff --server-side --force-conflicts`, so an object there but changed is drift, and a dry run the channel may not make is unknown | kubectl that writes |
 | k8s.cronjob, service.health | a Job from the CronJob, waited for; a Job made by hand, NAME-pubkit-... or NAME-now, counts as the CronJob's success, as kubectl does not make it the CronJob's | kubectl that writes |
+| k8s.job-once | a one-off Job named as the need (a backfill, a migration), made with `kubectl create -f -` from a CronJob's template (`cronjob`) or a manifest holding one Job (`manifest`), `args` added to its first container's, `timeout` its active deadline, its time-to-live dropped so it stays as the record; the fulfil returns once it is made. Its check: ready when the Job completed, unknown while it runs, missing when it is not there, drift when it failed. A failed Job is made again only with `rerun: if-failed`, and the plan names the one Job that deletes ("no data is deleted") | kubectl that writes (and deletes Jobs, for a rerun) |
 | github.gate | the gate set on, once every need before it is ready, and the workflow run | gh |
 | deploy.rollout | the workflow run on the default branch, and waited for | gh |
 | auth.sign-in-client | its Secret made on the server, from the client kept there; or the approval record written into `approvals` | the admin channel |
 
-The seven types that hold a secret's value are
+The eight types that hold a secret's value are
 [pubsec](https://github.com/Sustenaut/pubsec)'s: `k8s.secret` (a Secret made
 from the values of the needs that fill it, on kubectl's standard input),
 `github.secret`, `github.variable` and `github.deploy-settings` (set from
-Bitwarden through gh), `bitwarden.secret`, `bitwarden.generated` and
+Bitwarden through gh), `bitwarden.secret`, `bitwarden.generated`,
+`bitwarden.adopt` (a value a cluster Secret already holds, copied into Bitwarden) and
 `gcp.service-account-key`. pubsec's README, "Making what a service needs",
 says what each checks and does. A repository with a deploy block pins its
 own pubsec in `deploy.providers`, and `pubkit bump` moves it to pubsec's

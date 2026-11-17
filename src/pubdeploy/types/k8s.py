@@ -1,4 +1,4 @@
-"""k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob and k8s.jwks:
+"""k8s.namespace, k8s.secrets-declared, k8s.manifests, k8s.cronjob, k8s.job-once and k8s.jwks:
 what the cluster must hold, read through kubectl, and what the rendered
 manifests read, which needs no cluster. They use pubdeploy.k8s, which needs
 nothing of this package's. k8s.secret, which reads a Secret's values and
@@ -11,6 +11,8 @@ the deploy channel no longer needs the node's kubeconfig)."""
 
 from __future__ import annotations
 
+import copy
+import json
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -404,3 +406,134 @@ def keys_of(jwks: Any) -> dict[str, dict[str, Any]]:
     if not isinstance(found, list) or not all(isinstance(k, dict) for k in found):
         raise AttributeError("keys")
     return {str(k.get("kid", "")): k for k in found}
+
+
+TIMEOUT = {"type": "string", "pattern": r"^[1-9][0-9]*[mhd]$",
+           "x-phrase": "must be how long the Job may run: minutes, hours or days, such as 90m or 6h"}
+JOB_NAME = {"type": "string", "pattern": r"^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$",
+            "x-phrase": "must be a Job's or CronJob's name, in lower case"}
+MANIFEST = {"type": "string", "pattern": r"^(?!/)(?!.*(^|/)\.\.(/|$))[A-Za-z0-9_./-]+\.ya?ml$",
+            "x-phrase": "must be a YAML file in the repository holding one Job"}
+ANNOTATION = "pubdeploy/need"
+
+
+class JobOnce(Base):
+    """A one-off Job, such as a 90-day backfill, run once: made from a CronJob's
+    template (`cronjob`) or a manifest holding one Job (`manifest`), with `args`
+    added to its first container's, and `timeout` as its active deadline. The Job
+    stays as the record that it ran: its time-to-live is dropped. A failed one is
+    made again only with `rerun: if-failed`, and then only that Job is deleted.
+    The fulfil makes it and returns: the next walk sees how it went."""
+    type = "k8s.job-once"
+    grade = "auto"
+    budget = 4.0  # one or two kubectl reads
+    fulfil_budget = 60.0
+    needs_of_context = ("kubectl-write",)
+    # One source of the two, which the check says when a need gives both or neither.
+    schema = schema({"cronjob": JOB_NAME, "manifest": MANIFEST,
+                     "args": {"type": "array", "items": {"type": "string", "maxLength": 200},
+                              "x-phrase": "must list the arguments added to the Job's container"},
+                     "timeout": TIMEOUT, "rerun": {"enum": ["never", "if-failed"]}})
+
+    def _source(self, need: Need) -> str:
+        p = need.params
+        return f"CronJob {p['cronjob']}" if p.get("cronjob") else p["manifest"]
+
+    def action(self, need: Need, ctx: Context) -> str:
+        args = need.params.get("args") or []
+        make = (f"create Job {need.name} in namespace {ctx.namespace} from {self._source(need)}"
+                + (f" with the arguments {' '.join(args)}" if args else ""))
+        found = ctx.results.get(need.id)
+        if found is not None and found.state == "drift":
+            return f"delete Job {need.name} in namespace {ctx.namespace} (no data is deleted), then {make}"
+        return make
+
+    def check(self, need: Need, ctx: Context) -> Result:
+        ns, name = ctx.namespace, need.name
+        if bool(need.params.get("cronjob")) == bool(need.params.get("manifest")):
+            return Result("drift", f"k8s.job-once {name} names {'both' if need.params.get('cronjob') else 'neither'} "
+                                   "of cronjob and manifest", fixable=False,
+                          fix="give the need one source: cronjob, a CronJob's name, or manifest, a file with one Job")
+        job, ran = kubectl_json(ctx, "-n", ns, "get", "job", name)
+        if job is None and not not_found(ran):
+            return kubectl_refused(ran, ns, "jobs")
+        if job is None:
+            return self._absent(need, ctx)
+        status = job.get("status") or {}
+        conditions = {c.get("type"): c.get("status") for c in status.get("conditions") or [] if isinstance(c, dict)}
+        if (status.get("succeeded") or 0) >= 1 or conditions.get("Complete") == "True":
+            when_ = status.get("completionTime") or ""
+            return Result("ready", f"Job {name} completed{' at ' + when_ if when_ else ''}")
+        if conditions.get("Failed") == "True":
+            again = need.params.get("rerun") == "if-failed"
+            return Result("drift", f"Job {name} failed", fixable=again,
+                          fix=(f"pubdeploy k8s diagnose --namespace {ns}; walk --fulfil deletes Job {name} and makes "
+                               "it again" if again else
+                               f"pubdeploy k8s diagnose --namespace {ns}, then kubectl -n {ns} delete job {name} and "
+                               "walk --fulfil, or give the need rerun: if-failed"))
+        return Result("unknown", f"Job {name} is running", fixable=False,
+                      fix=f"wait for it: kubectl -n {ns} get job {name}")
+
+    def _absent(self, need: Need, ctx: Context) -> Result:
+        ns, name, cronjob = ctx.namespace, need.name, need.params.get("cronjob")
+        if cronjob:
+            _, ran = kubectl_json(ctx, "-n", ns, "get", "cronjob", cronjob)
+            if ran.returncode != 0 and not not_found(ran):
+                return kubectl_refused(ran, ns, "cronjobs")
+            if ran.returncode != 0:
+                return Result("missing", f"Job {name} has not run, and CronJob {cronjob} is not in {ns} yet",
+                              fixable=False, fix="deploy the service first: the Job is made from its CronJob")
+        return Result("missing", f"Job {name} has not run in {ns}",
+                      fix=f"./pubdeploy walk --fulfil makes it from {self._source(need)}")
+
+    def _job(self, need: Need, ctx: Context) -> dict[str, Any] | Result:
+        """The Job to make, or why it cannot be."""
+        ns, p = ctx.namespace, need.params
+        if p.get("cronjob"):
+            found, ran = kubectl_json(ctx, "-n", ns, "get", "cronjob", p["cronjob"])
+            if found is None:
+                return failed(f"CronJob {p['cronjob']} could not be read", ran)
+            spec = copy.deepcopy(((found.get("spec") or {}).get("jobTemplate") or {}).get("spec") or {})
+        else:
+            try:
+                docs = k8s.documents((Path(ctx.root) / p["manifest"]).read_text(encoding="utf-8"))
+            except (OSError, ValueError, SystemExit, yaml.YAMLError) as e:
+                return Result("drift", f"{p['manifest']} cannot be read as a Job", fix=type(e).__name__)
+            jobs = [d for d in docs if d.get("kind") == "Job"]
+            if len(jobs) != 1:
+                return Result("drift", f"{p['manifest']} holds {len(jobs)} Jobs, not one",
+                              fix=f"put the one Job to run in {p['manifest']}")
+            spec = copy.deepcopy(jobs[0].get("spec") or {})
+        containers = ((spec.get("template") or {}).get("spec") or {}).get("containers") or []
+        if not containers:
+            return Result("drift", f"{self._source(need)} gives a Job with no container",
+                          fix=f"see {self._source(need)}")
+        if p.get("args"):
+            containers[0]["args"] = [*(containers[0].get("args") or []), *p["args"]]
+        spec.pop("ttlSecondsAfterFinished", None)  # the Job stays as the record that it ran
+        if p.get("timeout"):
+            spec["activeDeadlineSeconds"] = int(duration(p["timeout"]).total_seconds())
+        return {"apiVersion": "batch/v1", "kind": "Job",
+                "metadata": {"name": need.name, "namespace": ns, "annotations": {ANNOTATION: need.id}},
+                "spec": spec}
+
+    def fulfil(self, need: Need, ctx: Context) -> Result:
+        ns, name = ctx.namespace, need.name
+        job = self._job(need, ctx)
+        if isinstance(job, Result):
+            return job
+        found = ctx.results.get(need.id)
+        details = []
+        if found is not None and found.state == "drift":
+            if need.params.get("rerun") != "if-failed":
+                return Result("drift", f"Job {name} failed, and the need does not run it again", fixable=False,
+                              fix=found.fix)
+            ran = ctx.kubectl(["-n", ns, "delete", "job", name, "--wait=true"])
+            if ran.returncode != 0 and not not_found(ran):
+                return failed(f"Job {name} could not be deleted", ran)
+            details.append(f"deleted Job {name}, which had failed")
+        ran = ctx.kubectl(["-n", ns, "create", "-f", "-"], input=json.dumps(job).encode())
+        if ran.returncode != 0:
+            return failed(f"Job {name} could not be made", ran)
+        return Result("ready", f"made Job {name} from {self._source(need)}: the next walk sees how it went",
+                      details=details)

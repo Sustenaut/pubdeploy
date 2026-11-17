@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "k8s.job-once: a one-off Job (a backfill, a migration) made from a CronJob's template or a manifest, with args and a timeout, run once; ready when it completed, unknown while it runs, drift when it failed, made again only with rerun: if-failed, and the plan names the Job a rerun deletes"
+}
