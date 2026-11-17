@@ -93,7 +93,7 @@ class VariableEntry(Base):
         repo, variable, pointer = need.params["repository"], need.params["variable"], need.params["path"]
         value = json.dumps(need.params["value"]) if "value" in need.params else "<its value>"
         return (f"in the owner's state file, under \"{repo.rsplit('/', 1)[-1]}\": set {pointer} of variables."
-                f"{variable} to {value}\nthen pubkit variables --apply {repo}")
+                f"{variable} to {value}\nthen pubrules variables --apply {repo}")
 
     def fulfil(self, need: Need, ctx: Context) -> Result:
         return Result("missing", "the variable is the state file's", fix=self.where(need))

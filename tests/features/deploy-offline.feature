@@ -1,4 +1,4 @@
-Feature: pubkit deploy check --offline checks what needs no network
+Feature: pubrules deploy check --offline checks what needs no network
   Offline, the walk renders the overlay and checks that the manifests and
   the needs agree (k8s.secrets-declared): every Secret the manifests read
   is one a need fills, with the keys they read, and every Secret a need
@@ -98,7 +98,7 @@ Feature: pubkit deploy check --offline checks what needs no network
     When I run pubdeploy "check" "--offline"
     Then the exit code is 1
     And it prints "unknown dns.site:example.example.eu  no hosting block says where example.example.eu is"
-    And it prints "give --zones PATH, the pubkit.json whose hosting block keeps the zone"
+    And it prints "give --zones PATH, the pubrules.json whose hosting block keeps the zone"
 
   Scenario: A host that is no site of the zone is missing
     Given the deploy block's "host" is "other.example.eu"

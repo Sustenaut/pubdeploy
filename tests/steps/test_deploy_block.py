@@ -1,4 +1,4 @@
-"""Steps for the deploy block's schema, through pubkit sync --check and pubkit deploy: the shared ones are deploy_steps.py's."""
+"""Steps for the deploy block's schema, through pubrules sync --check and pubrules deploy: the shared ones are deploy_steps.py's."""
 
 from __future__ import annotations
 

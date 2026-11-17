@@ -1,10 +1,10 @@
-Feature: What pubkit calls of pubdeploy (hooks.py), and that pubdeploy imports nothing of pubkit's
+Feature: What pubrules calls of pubdeploy (hooks.py), and that pubdeploy imports nothing of pubrules's
 
   Scenario: The hooks are offered under their groups
     Then the hooks are offered under their groups
 
-  Scenario: Pubdeploy imports nothing of pubkit
-    Then pubdeploy imports nothing of pubkit
+  Scenario: Pubdeploy imports nothing of pubrules
+    Then pubdeploy imports nothing of pubrules
 
   Scenario: Without a deploy block the sync hook says nothing
     Then without a deploy block the sync hook says nothing

@@ -1,4 +1,4 @@
-"""Steps for `pubkit k8s preflight` and `pubkit k8s diagnose`, against a
+"""Steps for `pubrules k8s preflight` and `pubrules k8s diagnose`, against a
 fake kubectl on PATH that answers from a JSON file: the namespace's
 Secrets, whether it may read them, its pods, their events and logs. It
 records each call, and the steps check what no output may hold: a value."""
@@ -203,16 +203,16 @@ def write(tmp_path, cluster, manifests) -> Path:
 @when(parsers.parse('I preflight the sample in "{ns}"'), target_fixture="result")
 def preflight(tmp_path, run, cluster, manifests, ns):
     path = write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubkit  # noqa: PLC0415
-    return run(pubkit(), "k8s", "preflight", "--namespace", ns, "--kubectl", cluster["kubectl"],
+    from conftest import pubdeploy as pubrules  # noqa: PLC0415
+    return run(pubrules(), "k8s", "preflight", "--namespace", ns, "--kubectl", cluster["kubectl"],
                stdin=path.read_text())
 
 
 @when("I preflight the sample offline", target_fixture="result")
 def preflight_offline(tmp_path, run, cluster, manifests):
     path = write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubkit  # noqa: PLC0415
-    return run(pubkit(), "k8s", "preflight", "--namespace", "example", "--offline",
+    from conftest import pubdeploy as pubrules  # noqa: PLC0415
+    return run(pubrules(), "k8s", "preflight", "--namespace", "example", "--offline",
                "--kubectl", cluster["kubectl"], stdin=path.read_text())
 
 
@@ -282,5 +282,5 @@ def ready(cluster, pod):
 @when(parsers.parse('I diagnose "{ns}"'), target_fixture="result")
 def diagnose(tmp_path, run, cluster, manifests, ns):
     write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubkit  # noqa: PLC0415
-    return run(pubkit(), "k8s", "diagnose", "--namespace", ns, "--kubectl", cluster["kubectl"])
+    from conftest import pubdeploy as pubrules  # noqa: PLC0415
+    return run(pubrules(), "k8s", "diagnose", "--namespace", ns, "--kubectl", cluster["kubectl"])

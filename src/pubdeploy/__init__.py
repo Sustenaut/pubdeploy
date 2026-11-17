@@ -6,14 +6,14 @@ what a service needs before it deploys, whether it has it, and making it.
     pubdeploy check ...                      walk without --fulfil
     pubdeploy types
 
-pubkit.json's `deploy` block names the namespace, and maybe the host, the
+pubrules.json's `deploy` block names the namespace, and maybe the host, the
 deploy workflow, the gate variable, the overlay and needs nothing implies.
 The block, the secrets, github_app and variables blocks, and the Secrets the
 rendered overlay reads imply the rest (implied.py). `check` walks every need
 in order (order.py, walk.py) and prints its state: ready, missing, drift,
 blocked or unknown. It reads, and changes nothing. `--offline` checks only
 what needs no network: the rendered manifests against the needs, the
-manifest files, and the host against the hosting block. `pubkit sync
+manifest files, and the host against the hosting block. `pubrules sync
 --check` runs that too, so a block that disagrees with the manifests fails CI.
 
 `walk --fulfil` then acts (walk.py): it prints the plan, a line per need
@@ -182,7 +182,7 @@ def load(root: Path, config: dict[str, Any] | None = None, ctx: Context | None =
         config = read_config(root)
     types = types or registered()
     if BLOCK not in config:
-        return Plan(root, config, "", {}, [], [f"{BLOCK}: pubkit.json has no deploy block"])
+        return Plan(root, config, "", {}, [], [f"{BLOCK}: pubrules.json has no deploy block"])
     from .units import unit_block  # noqa: PLC0415
     if bad := problems(config, root, types):
         return Plan(root, config, "", {}, [], bad)
@@ -206,10 +206,10 @@ def check(plan: Plan, ctx: Context, types: dict[str, NeedType] | None = None) ->
     from . import __version__  # noqa: PLC0415
     service = {"repository": ctx.slug, "namespace": plan.namespace, "unit": plan.unit or plan.namespace,
                "commit": git(plan.root, "rev-parse", "HEAD"), "pubdeploy": __version__}
-    # PUBKIT_WALK_BY: who a host that walks for others (the convergence engine) says asked.
-    by = ctx.env.get("PUBKIT_WALK_BY") or ctx.env.get("GITHUB_ACTOR") or git(plan.root, "config", "user.email")
+    # PUBRULES_WALK_BY: who a host that walks for others (the convergence engine) says asked.
+    by = ctx.env.get("PUBRULES_WALK_BY") or ctx.env.get("GITHUB_ACTOR") or git(plan.root, "config", "user.email")
     origin = "actions" if ctx.env.get("GITHUB_ACTIONS") == "true" else (
-        "plane" if ctx.env.get("PUBKIT_PLANE") else "laptop")
+        "plane" if ctx.env.get("PUBRULES_PLANE") else "laptop")
     return walk(plan.needs, types or registered(), ctx, service, by=by, origin=origin)
 
 
@@ -233,7 +233,7 @@ def context(root: Path, config: dict[str, Any], offline: bool, kubectl_command: 
 
 
 def offline_lines(root: Path, config: dict[str, Any], ctx: Context | None = None) -> tuple[list[str], bool]:
-    """For `pubkit sync`: what is wrong with the deploy block, or the offline
+    """For `pubrules sync`: what is wrong with the deploy block, or the offline
     walk's needs that are not ready, and whether that fails --check. An
     offline need that could not be checked (no kustomize, no hosting block)
     is said, and fails nothing."""
@@ -274,7 +274,7 @@ def ask(prompt: str) -> str:
 
 # The entry-point group of the hooks a walk calls before it fulfils, such as
 # pubsec's, which asks for the Bitwarden write token and gives the walk its
-# writer: pubkit holds no write token itself.
+# writer: pubrules holds no write token itself.
 WALK_HOOKS = "sustenaut.walk"
 
 
@@ -305,7 +305,7 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
     for warning in loaded.warnings:
         print(f"pubdeploy: warning: {warning}", file=sys.stderr)
     if BLOCK not in config:
-        print(f"pubdeploy: {BLOCK}: pubkit.json has no deploy block", file=sys.stderr)
+        print(f"pubdeploy: {BLOCK}: pubrules.json has no deploy block", file=sys.stderr)
         return 2
     if fulfil and offline:
         print("pubdeploy: deploy: --fulfil does not run --offline", file=sys.stderr)
@@ -370,7 +370,7 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
             if len(walks) > 1:
                 print(("\n" if k else "") + f"unit {ctx.unit}:")
             print("\n".join(lines(journal)))
-    url = journal_url or walks[0][0].env.get("PUBKIT_JOURNAL_URL")
+    url = journal_url or walks[0][0].env.get("PUBRULES_JOURNAL_URL")
     if url:
         from .store import write  # noqa: PLC0415
         for document in documents:

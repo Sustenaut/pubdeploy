@@ -1,17 +1,17 @@
-"""What pubkit calls of pubdeploy, through two entry-point groups, so pubkit
+"""What pubrules calls of pubdeploy, through two entry-point groups, so pubrules
 imports nothing of the walk:
 
 - `sustenaut.sync`, `check(root, config, check) -> (lines, failed)`: the deploy
   block's offline check (the block and its needs, the manifests against
   them, the units against the deploy workflow). It seeds no scheduled walk:
   the convergence engine walks every deploy service, and a repository's own
-  deploy-check.yml caller, where one is left, is its own to remove. `pubkit sync` calls it after its own work, and
+  deploy-check.yml caller, where one is left, is its own to remove. `pubrules sync` calls it after its own work, and
   `--check` fails when it says so. `pubdeploy sync-check` runs it alone.
 - `sustenaut.bump`, `bump(root) -> lines`: each deploy.providers entry moved
   to its latest release, then this repository's uses of pubdeploy's
   reusable workflows moved to the pubdeploy deploy.providers names, a caller
   of k8s-deploy.yml still started by `push` rewritten to `workflow_run`.
-  `pubkit bump` calls it after moving pubkit's own pins; `pubdeploy bump`
+  `pubrules bump` calls it after moving pubrules's own pins; `pubdeploy bump`
   runs it alone.
 """
 
@@ -29,7 +29,7 @@ def check(root: Path, config: dict[str, Any], check: bool) -> tuple[list[str], b
         return [], False
     from . import offline_lines  # noqa: PLC0415
     lines, failed = offline_lines(root, config)
-    # Writing, a disagreement is said and fails nothing, as pubkit sync goes on.
+    # Writing, a disagreement is said and fails nothing, as pubrules sync goes on.
     return lines, check and failed
 
 
@@ -59,7 +59,7 @@ def bump(root: Path, gh: Any = None, find: Any = None) -> list[str]:
     from .config import ref  # noqa: PLC0415
     from .providers import WHEEL, bump as providers  # noqa: PLC0415
     from .units import K8S_DEPLOY, retrigger, trigger_problems  # noqa: PLC0415
-    path = root / "pubkit.json"
+    path = root / "pubrules.json"
     if not path.is_file():
         return []
     out = providers(root, gh, find)

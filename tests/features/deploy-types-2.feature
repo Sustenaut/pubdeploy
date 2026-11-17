@@ -263,7 +263,7 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     Examples:
       | job                               | hours | state   |
       | worker-now                        | 1     | ready   |
-      | worker-pubkit-20261107070000      | 1     | ready   |
+      | worker-pubrules-20261107070000      | 1     | ready   |
       | worker-now                        | 3     | drift   |
       | worker-other                      | 1     | missing |
 

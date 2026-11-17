@@ -1,4 +1,4 @@
-"""A deploy block's units, and what `pubkit sync --check` asks of its workflow.
+"""A deploy block's units, and what `pubrules sync --check` asks of its workflow.
 
 The top level of the deploy block is the unit its `namespace` names; `units`
 adds more, each with its own namespace, overlay, gate and host:
@@ -35,7 +35,7 @@ from .schema import DEFAULT_OVERLAY, DEFAULT_WORKFLOW, WORKFLOWS
 OWN = ("namespace", "overlay", "gate", "host")
 K8S_DEPLOY = re.compile(r"(?P<owner>[A-Za-z0-9][A-Za-z0-9-]*)/pubdeploy/\.github/workflows/k8s-deploy\.ya?ml@"
                         r"(?:v|[0-9a-f]{40}[ \t]+#[ \t]*v)(?P<version>[0-9][^\s'\"]*)")
-CI = "main"  # the CI workflow pubkit sync writes, by name
+CI = "main"  # the CI workflow pubrules sync writes, by name
 TRIGGER = "  workflow_run: { workflows: [main], types: [completed], branches: [main] }"
 DISPATCH = "  workflow_dispatch: {}"
 PERMISSIONS = "permissions: { actions: read, contents: read, packages: write }"

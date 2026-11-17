@@ -1,0 +1,4 @@
+{
+  "category": "changed",
+  "change": "pubkit is now pubrules: the walk reads the deploy block from pubrules.json, the launcher it writes sits beside ./pubrules, its messages and the k8s-deploy and deploy-check workflows name pubrules, and the repository itself runs on pubrules 0.43.0"
+}

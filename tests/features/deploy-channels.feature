@@ -20,7 +20,7 @@ Feature: How a walk reaches the cluster and the server
       | --kubectl "ssh -i key deploy@server.example.eu {unit} kubectl-read" | deploy  | never runs |
       | --kubectl "kubectl --context example"                        | plain   | never runs     |
       | nothing                                                      | plain   | never runs     |
-      | the environment's PUBKIT_PLANE "1"                           | plane   | never runs     |
+      | the environment's PUBRULES_PLANE "1"                           | plane   | never runs     |
 
   Scenario: Over the admin channel kubectl's arguments are one quoted line, and a manifest comes on standard input
     Given the walk is given --server "server.example.eu"

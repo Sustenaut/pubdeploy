@@ -12,7 +12,7 @@
              only, so every write fulfil is unknown, and nothing runs on the server.
     plain    --kubectl CMD, or kubectl: what the kubeconfig may do. Nothing runs
              on the server.
-    plane    PUBKIT_PLANE set: in-cluster kubectl. Nothing runs on the server yet.
+    plane    PUBRULES_PLANE set: in-cluster kubectl. Nothing runs on the server yet.
 
 A command's arguments reach the server as one quoted line, as ssh sends
 them, and its standard input carries what is secret: a Secret manifest, a
@@ -174,7 +174,7 @@ class Channels:
 def channels(kubectl_command: str | None, server_host: str | None, env: Mapping[str, str],
              unit: str = "") -> Channels:
     """The walk's channels, from --kubectl, --server and the environment, for a unit's namespace."""
-    if env.get("PUBKIT_PLANE"):
+    if env.get("PUBRULES_PLANE"):
         return Channels("plane", plain("kubectl"), no_server)
     if kubectl_command:
         argv = shlex.split(kubectl_command.replace("{unit}", unit))

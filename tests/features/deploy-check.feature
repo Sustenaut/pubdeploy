@@ -1,4 +1,4 @@
-Feature: pubkit deploy check walks every need, and changes nothing
+Feature: pubrules deploy check walks every need, and changes nothing
   Each need is checked in order, through kubectl, the GitHub API, HTTP,
   the DNS, and the environment ./with-secrets gives: ready, missing,
   drift, blocked or unknown. A need still checked while one it waits for

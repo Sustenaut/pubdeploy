@@ -21,7 +21,7 @@ Repository = "https://github.com/Sustenaut/pubdeploy"
 [project.scripts]
 pubdeploy = "pubdeploy.cli:main"
 
-# What pubkit calls of pubdeploy (hooks.py): its sync --check and its bump.
+# What pubrules calls of pubdeploy (hooks.py): its sync --check and its bump.
 [project.entry-points."sustenaut.sync"]
 pubdeploy = "pubdeploy.hooks:check"
 

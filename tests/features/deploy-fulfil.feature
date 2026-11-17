@@ -1,4 +1,4 @@
-Feature: pubkit deploy walk --fulfil makes what is missing, once the plan is confirmed
+Feature: pubrules deploy walk --fulfil makes what is missing, once the plan is confirmed
   The walk checks every need first. With --fulfil it prints the plan, a line
   per need it will act on, and waits for a typed yes (--yes skips that); a
   write token is asked for at a hidden prompt when a need wants one. Each

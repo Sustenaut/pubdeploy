@@ -1,20 +1,20 @@
 # pubdeploy
 
-The deploy walk, split out of [pubkit](https://github.com/Sustenaut/pubkit):
-what a service needs before it deploys (pubkit.json's `deploy` block),
+The deploy walk, split out of [pubrules](https://github.com/Sustenaut/pubrules):
+what a service needs before it deploys (pubrules.json's `deploy` block),
 whether it has it, and making what is missing; the checks a deploy to
 Kubernetes runs (`pubdeploy k8s preflight` and `diagnose`); and the reusable
 `k8s-deploy.yml` and `deploy-check.yml`, the `deploy-ssh` action and the
 kustomize component `k8s/components/app`.
 
-pubdeploy depends on PyYAML alone and imports nothing of pubkit's. The few
-helpers it shares with pubkit (`gh`, the storage journal client, the
-secrets-block reading) are copies, each marked with the pubkit original.
+pubdeploy depends on PyYAML alone and imports nothing of pubrules's. The few
+helpers it shares with pubrules (`gh`, the storage journal client, the
+secrets-block reading) are copies, each marked with the pubrules original.
 
 A repository with a deploy block runs its pinned pubdeploy as `./pubdeploy`,
-which `pubkit sync` writes beside `./pubkit`, with each `deploy.providers`
+which `pubrules sync` writes beside `./pubrules`, with each `deploy.providers`
 wheel, so the need types of other packages (pubsec's, pg-backup's) load. It
-runs the release wheel pubkit.json pins, through `uvx`, checking its sha256 on
+runs the release wheel pubrules.json pins, through `uvx`, checking its sha256 on
 every run:
 
 ```sh
@@ -23,19 +23,19 @@ every run:
 ./with-secrets ./pubdeploy walk --fulfil
 ```
 
-## What pubkit calls
+## What pubrules calls
 
-pubkit imports nothing of pubdeploy. It loads two entry-point groups, both
+pubrules imports nothing of pubdeploy. It loads two entry-point groups, both
 pubdeploy's:
 
 - **`sustenaut.sync`**, `check(root, config, check) -> (lines, failed)`:
-  `pubkit sync` calls it after its own work, and `--check` fails when it
+  `pubrules sync` calls it after its own work, and `--check` fails when it
   says so. It is the deploy block's offline check (the block and its needs,
   the manifests against them, the units against the deploy workflow).
   It no longer seeds a scheduled walk's caller: the convergence engine walks
   every deploy service. `pubdeploy sync-check [--check]` runs it alone.
-- **`sustenaut.bump`**, `bump(root) -> lines`: `pubkit bump` calls it after
-  moving pubkit's own pins. It moves each `deploy.providers` wheel to its
+- **`sustenaut.bump`**, `bump(root) -> lines`: `pubrules bump` calls it after
+  moving pubrules's own pins. It moves each `deploy.providers` wheel to its
   latest release, then this repository's uses of pubdeploy's reusable
   workflows to the pubdeploy that `deploy.providers` names, and rewrites a
   caller of k8s-deploy.yml still started by `push` to `workflow_run`.
@@ -75,7 +75,7 @@ jobs:
   ?integrations`), and fails, naming it, if one did not pass. A name
   starting with `?` is waited for only where the repository has such a
   workflow, so `integrations` counts wherever there is one. `main` is the
-  workflow `pubkit sync` writes for pushes to main; a repository whose CI
+  workflow `pubrules sync` writes for pushes to main; a repository whose CI
   is another workflow names it in `require`, and in `workflow_run`.
 - The `build` job checks out that commit and builds `image`, tagged with it,
   with pubhost's `actions/docker-build` (its layer cache scoped to the image's name,
@@ -113,7 +113,7 @@ then holds a runner while it waits for CI. Either way the caller grants
 
 **Moving to it from 0.30.** In the deploy workflow, move the pin; replace
 `push` with the `workflow_run` above (on the CI workflow's name, `main` where
-`pubkit sync` writes it); and add `actions: read` to `permissions`. A
+`pubrules sync` writes it); and add `actions: read` to `permissions`. A
 repository without a `main` workflow also gives `require`. Nothing else
 changes: inputs, secrets and variables are as they were.
 
@@ -138,7 +138,7 @@ cloud-init brings) only for YAML, so a server installs that one file, pinned
 by the commit of a release and its sha256, and its deploy program calls it:
 
 ```bash
-check() { python3 /usr/local/lib/pubkit/k8s.py "$@" --namespace "$app" \
+check() { python3 /usr/local/lib/pubrules/k8s.py "$@" --namespace "$app" \
   --kubectl "/usr/local/bin/k3s kubectl --kubeconfig $cfg"; }
 check preflight < "$manifests" || exit 1
 k apply -f "$manifests"
@@ -153,8 +153,8 @@ that mount any Secret there, and reads their logs. Three minutes is enough
 for a rollout whose pods start within the app component's minute; a
 longer wait only delays the failure.
 
-Pin it like pubkit's workflows, to the commit of a pubdeploy release: the one
-`deploy.providers` names, to which `pubkit bump` moves it.
+Pin it like pubrules's workflows, to the commit of a pubdeploy release: the one
+`deploy.providers` names, to which `pubrules bump` moves it.
 
 **The app component.** `k8s/components/app` is a kustomize Component with the
 hardening and probes every service's app shares. It patches the Deployment
@@ -187,7 +187,7 @@ so a change to it reaches each one only when that service moves its pin.
 
 A service needs more than its manifests before it runs: a namespace, the
 Secrets its pods read and what fills them, GitHub secrets and variables for
-its deploy, the services it calls, its host in the DNS. pubkit.json's
+its deploy, the services it calls, its host in the DNS. pubrules.json's
 `deploy` block says so, and `pubdeploy check` checks each, changing
 nothing:
 
@@ -239,7 +239,7 @@ rollout and the service's health. Each is `ready`, `missing`, `drift`,
 ```
 ./with-secrets ./pubdeploy check                 # everything, Bitwarden included
 ./pubdeploy check --offline                      # the manifests and the files only
-./pubdeploy check --zones ../infra/pubkit.json   # the hosting block that keeps the zone
+./pubdeploy check --zones ../infra/pubrules.json   # the hosting block that keeps the zone
 ./pubdeploy check --json                         # the walk as a deploy-journal/2 document
 ```
 
@@ -248,12 +248,12 @@ It reads the cluster through `kubectl` (`--kubectl CMD` for another, such as
 HTTPS, the DNS through `dig`, and Bitwarden only as `./with-secrets` gives
 it: a Bitwarden need is looked for by name in the environment, and is
 `unknown` outside with-secrets. It never prints a value: a secret is named,
-with its length and kind. `--zones` reads only a file named `pubkit.json`, in
+with its length and kind. `--zones` reads only a file named `pubrules.json`, in
 this repository or a checkout beside it, and may be given once per owner whose
 zones the units' hosts are in. A host in a zone none of them holds is `unknown`,
 not `missing`: its owner's zones were not given.
 
-`pubkit sync --check` checks the block too, and runs the offline walk: every
+`pubrules sync --check` checks the block too, and runs the offline walk: every
 Secret the manifests read must be one a need fills, with the keys they read,
 and every Secret a need fills must be read, so a manifest that reads a new
 Secret fails CI until the block says where it comes from. What it cannot
@@ -279,7 +279,7 @@ needs use, and the managed `./pubdeploy` runs with each:
 
 uv does not check a `--with` address's `#sha256`, so `./pubdeploy` fetches each
 wheel once into the user's cache and checks it against its sha256 on every
-run before uv sees it. `pubkit bump` moves each to its latest release
+run before uv sees it. `pubrules bump` moves each to its latest release
 (pubdeploy's sustenaut.bump hook). A need whose type no installed package offers
 names the providers that would.
 
@@ -310,7 +310,7 @@ does, type by type:
 | --- | --- | --- |
 | k8s.namespace | `sustenaut-app NS` on the server | the admin channel |
 | k8s.manifests | `kubectl apply --server-side --force-conflicts -f -` of the file, each object in the namespace it names (fields applied client-side before move to server-side ownership); its check also runs `kubectl diff --server-side --force-conflicts`, so an object there but changed is drift, and a dry run the channel may not make is unknown | kubectl that writes |
-| k8s.cronjob, service.health | a Job from the CronJob, waited for; a Job made by hand, NAME-pubkit-... or NAME-now, counts as the CronJob's success, as kubectl does not make it the CronJob's | kubectl that writes |
+| k8s.cronjob, service.health | a Job from the CronJob, waited for; a Job made by hand, NAME-pubrules-... or NAME-now, counts as the CronJob's success, as kubectl does not make it the CronJob's | kubectl that writes |
 | k8s.job-once | a one-off Job named as the need (a backfill, a migration), made with `kubectl create -f -` from a CronJob's template (`cronjob`) or a manifest holding one Job (`manifest`), `args` added to its first container's, `timeout` its active deadline, its time-to-live dropped so it stays as the record; the fulfil returns once it is made. Its check: ready when the Job completed, unknown while it runs, missing when it is not there, drift when it failed. A failed Job is made again only with `rerun: if-failed`, and the plan names the one Job that deletes ("no data is deleted") | kubectl that writes (and deletes Jobs, for a rerun) |
 | github.gate | the gate set on, once every need before it is ready, and the workflow run | gh |
 | deploy.rollout | the workflow run on the default branch, and waited for | gh |
@@ -324,12 +324,12 @@ Bitwarden through gh), `bitwarden.secret`, `bitwarden.generated`,
 `bitwarden.adopt` (a value a cluster Secret already holds, copied into Bitwarden) and
 `gcp.service-account-key`. pubsec's README, "Making what a service needs",
 says what each checks and does. A repository with a deploy block pins its
-own pubsec in `deploy.providers`, and `pubkit bump` moves it to pubsec's
-latest release, as it does every provider. pubkit keeps a floor, the oldest
-pubsec it works with (`PUBSEC_FLOOR`, which its suite tests): `pubkit sync`
+own pubsec in `deploy.providers`, and `pubrules bump` moves it to pubsec's
+latest release, as it does every provider. pubrules keeps a floor, the oldest
+pubsec it works with (`PUBSEC_FLOOR`, which its suite tests): `pubrules sync`
 lists the floor where none is listed and moves one below it up, and `sync
 --check` fails without one or below it, so `./pubdeploy` always walks with
-them. The floor moves only when pubkit needs a newer pubsec, such as for a
+them. The floor moves only when pubrules needs a newer pubsec, such as for a
 change to the provider contract. Where pubsec is not installed, a need of
 one of its types says so.
 
@@ -389,19 +389,19 @@ in an argv, a file, a log or the journal.
 `namespace`, `overlay`, `gate` and `host`; they share the workflow and every
 need with no `unit` (`"unit": "other"` scopes one). Each is walked and
 journaled on its own; `--unit` walks one. When the workflow calls
-k8s-deploy.yml, `pubkit sync --check` fails unless its `deploys` lines and
+k8s-deploy.yml, `pubrules sync --check` fails unless its `deploys` lines and
 the units agree, and, from k8s-deploy.yml 0.31.0, unless the workflow
 starts on `workflow_run` of main with `actions: read`, and on
 `workflow_dispatch`, by which the gate's and the rollout's fulfils run it;
-`pubkit bump` rewrites a `push` trigger when it moves that pin across 0.31.0.
+`pubrules bump` rewrites a `push` trigger when it moves that pin across 0.31.0.
 
 `--json` prints a deploy-journal/2 document per unit (a list for more than
 one): each need with its grade and whether it was fulfilled. `--journal URL`
-(or `PUBKIT_JOURNAL_URL`) also writes it to storage, as a file of the tenant
+(or `PUBRULES_JOURNAL_URL`) also writes it to storage, as a file of the tenant
 `plane`, and moves the head `OWNER.REPO.UNIT` (lower case, as storage's head names are) to it, If-Match its
 ETag, trying once more when another walk moved it first. The token is
-`PUBKIT_STORAGE_TOKEN`, or in GitHub Actions the job's OIDC token for
-`PUBKIT_STORAGE_AUDIENCE` (default the address's host). A journal that
+`PUBRULES_STORAGE_TOKEN`, or in GitHub Actions the job's OIDC token for
+`PUBRULES_STORAGE_AUDIENCE` (default the address's host). A journal that
 could not be written is said, and fails nothing.
 
 pubdeploy's `deploy-check.yml` walks it every 30 minutes, read-only, over the
@@ -409,12 +409,12 @@ deploy channel, with the deploy key, host and tailnet secrets k8s-deploy.yml
 takes and the environment's read-only `BWS_ACCESS_TOKEN`, with
 `--tolerate-unknown`: it fails when a need is missing, drift or blocked, and
 a need the job cannot judge, such as a secret its token may not list, stays
-unknown in the journal and fails nothing. `pubkit sync` no longer seeds its
+unknown in the journal and fails nothing. `pubrules sync` no longer seeds its
 caller, `.github/workflows/deploy-check.yml`: the convergence engine walks every
 deploy service, and a repository removes its caller once the engine shows it.
 And every repository with a `with-secrets.json` gets the managed
 `with-secrets`: an older copied script is why `bitwarden.*` needs were
-unknown, and `pubkit sync --check` says so.
+unknown, and `pubrules sync --check` says so.
 
 ## Developing
 

@@ -1,7 +1,7 @@
 """The DNS names and record types the dns.site check may ask a resolver
 about: absolute, lower case, labels of letters, digits, hyphens and
 underscores; types in capitals. Anything else stops the check. After
-pubkit's dns.NAME, checked and checked_type."""
+pubrules's dns.NAME, checked and checked_type."""
 
 from __future__ import annotations
 

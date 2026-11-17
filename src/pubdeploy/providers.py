@@ -1,11 +1,11 @@
 """Moving deploy.providers to its packages' latest releases, for
-`pubdeploy bump` (the sustenaut.bump hook). Taken from pubkit's
-deploy/providers.py, whose floor and launcher half stays in pubkit.
+`pubdeploy bump` (the sustenaut.bump hook). Taken from pubrules's
+deploy/providers.py, whose floor and launcher half stays in pubrules.
 
 A provider's wheel is a GitHub release's asset, so its latest release is
 read through `gh`, and the asset of the same distribution in it is the new
 wheel, with the sha256 GitHub records for it (or, for an older release
-without one, the sha256 of the file). pubkit.json is changed in place, the
+without one, the sha256 of the file). pubrules.json is changed in place, the
 two strings and nothing else, so its layout stays the repository's.
 """
 
@@ -50,8 +50,8 @@ def latest(wheel: str, gh: Any = None) -> tuple[str, str] | None:
 
 
 def bump(root: Path, gh: Any = None, find: Any = None) -> list[str]:
-    """Move each provider of pubkit.json to its latest release; a line per one moved."""
-    path = root / "pubkit.json"
+    """Move each provider of pubrules.json to its latest release; a line per one moved."""
+    path = root / "pubrules.json"
     text = path.read_text(encoding="utf-8")
     deploy = json.loads(text).get("deploy")
     out = []
@@ -66,7 +66,7 @@ def bump(root: Path, gh: Any = None, find: Any = None) -> list[str]:
         if found is None or found[0] == given["wheel"]:
             continue
         text = text.replace(given["wheel"], found[0]).replace(given["sha256"], found[1])
-        out.append(f"updated  pubkit.json (deploy.providers {given.get('distribution')}: "
+        out.append(f"updated  pubrules.json (deploy.providers {given.get('distribution')}: "
                    f"{WHEEL.fullmatch(found[0])['version'] if WHEEL.fullmatch(found[0]) else found[0]})")
     if any(line.startswith("updated") for line in out):
         path.write_text(text, encoding="utf-8")

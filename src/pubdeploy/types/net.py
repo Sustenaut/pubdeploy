@@ -1,7 +1,7 @@
 """upstream, dns.site, service.health and storage.tenant: what answers on the network.
 
 dns.site's offline part reads the hosting block, of this repository's
-pubkit.json or of the one --zones names (the repository that keeps the
+pubrules.json or of the one --zones names (the repository that keeps the
 zone): the host must be a site of one of its zones. Online, its A or AAAA
 records must resolve. Its fulfil proposes the site to add.
 
@@ -97,19 +97,19 @@ class Site(Base):
             label = host[:-len(zone) - 1] if zone else host
         within = f"hosting.zones[\"{zone}\"].sites" if zone else "the sites of its zone in hosting.zones"
         entry = json.dumps({label: {"provider": "<provider>", "kind": "server", "server": "<server>"}})
-        return Result("missing", f"{host} is a site to add", fix=f"in the pubkit.json that keeps the zone, add to "
+        return Result("missing", f"{host} is a site to add", fix=f"in the pubrules.json that keeps the zone, add to "
                                                                     f"{within}:\n  {entry[1:-1]}\nthen apply its hosting stack")
 
     def check(self, need: Need, ctx: Context) -> Result:
         host = need.params.get("host", need.name)
         if ctx.zones is None:
             return Result("unknown", f"no hosting block says where {host} is",
-                          fix="give --zones PATH, the pubkit.json whose hosting block keeps the zone")
+                          fix="give --zones PATH, the pubrules.json whose hosting block keeps the zone")
         zone = site_of(host, ctx.zones)
         if zone is None and not any(host == z or host.endswith(f".{z}") for z in ctx.zones):
             # No zone given holds it: the zones of another owner, not a site missing.
             return Result("unknown", f"no hosting block given has a zone for {host}",
-                          fix="give --zones PATH again, the pubkit.json whose hosting block keeps its zone")
+                          fix="give --zones PATH again, the pubrules.json whose hosting block keeps its zone")
         if zone is None:
             return Result("missing", f"{host} is no site of a zone in the hosting block",
                           fix="add it to the sites of its zone in the hosting block")

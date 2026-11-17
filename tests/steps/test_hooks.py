@@ -1,5 +1,5 @@
-"""What pubkit calls of pubdeploy (hooks.py), and that pubdeploy imports
-nothing of pubkit's."""
+"""What pubrules calls of pubdeploy (hooks.py), and that pubdeploy imports
+nothing of pubrules's."""
 
 from __future__ import annotations
 
@@ -26,15 +26,15 @@ def the_hooks_are_offered_under_their_groups():
     assert [p.value for p in entry_points(group="sustenaut.bump") if p.name == "pubdeploy"] == ["pubdeploy.hooks:bump"]
 
 
-@then("pubdeploy imports nothing of pubkit")
-def pubdeploy_imports_nothing_of_pubkit():
-    """Every module loads with pubkit unimportable."""
+@then("pubdeploy imports nothing of pubrules")
+def pubdeploy_imports_nothing_of_pubrules():
+    """Every module loads with pubrules unimportable."""
     names = sorted(f"pubdeploy.{p.relative_to(SRC).with_suffix('').as_posix().replace('/', '.')}".removesuffix(".__init__")
                    for p in SRC.rglob("*.py"))
     script = ("import sys, importlib\n"
               "class Block:\n"
               "    def find_spec(self, name, path=None, target=None):\n"
-              "        if name == 'pubkit' or name.startswith('pubkit.'): raise ImportError('pubkit is blocked')\n"
+              "        if name == 'pubrules' or name.startswith('pubrules.'): raise ImportError('pubrules is blocked')\n"
               "sys.meta_path.insert(0, Block())\n"
               f"for n in {names!r}: importlib.import_module(n)\n")
     done = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, check=False)
@@ -66,7 +66,7 @@ def writing_a_disagreement_is_said_and_fails_nothing(tmp_path, monkeypatch):
 
 
 def bumped_repo(tmp_path, version, trigger):
-    (tmp_path / "pubkit.json").write_text(json.dumps({"kind": "service", "deploy": {
+    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {
         "namespace": "example", "providers": [{"distribution": "pubdeploy", "wheel": WHEEL.format(version),
                                                "sha256": "b" * 64}]}}))
     workflows = tmp_path / ".github" / "workflows"
@@ -122,13 +122,13 @@ def bump_pins_by_tag_when_the_tag_cannot_be_read(tmp_path):
 
 @then("bump without pubdeploy in providers moves no workflow")
 def bump_without_pubdeploy_in_providers_moves_no_workflow(tmp_path):
-    (tmp_path / "pubkit.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example"}}))
+    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example"}}))
     assert hooks.bump(tmp_path, gh=fake_gh, find=lambda wheel, gh: None) == []
 
 
 @then("deploy ssh passes its own tests")
 def deploy_ssh_passes_its_own_tests():
-    """actions/deploy-ssh/test.sh, which pubkit's CI ran while the action was pubkit's."""
+    """actions/deploy-ssh/test.sh, which pubrules's CI ran while the action was pubrules's."""
     script = Path(__file__).resolve().parents[2] / "actions" / "deploy-ssh" / "test.sh"
     done = subprocess.run(["bash", str(script)], capture_output=True, text=True, check=False, timeout=120)
     assert done.returncode == 0, done.stdout + done.stderr

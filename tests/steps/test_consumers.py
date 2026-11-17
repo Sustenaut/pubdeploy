@@ -1,5 +1,5 @@
 """Steps for the guard that keeps consumers' names out of pubdeploy, moved
-from pubkit's test_consumers.py with the deploy code."""
+from pubrules's test_consumers.py with the deploy code."""
 
 from __future__ import annotations
 
@@ -25,14 +25,14 @@ def finds_nothing(names):
 
 
 # pubdeploy: its package, workflows, actions, tests and example service. They may name
-# example hosts, the tools' and registries' hosts, pubkit itself, and the names
-# pubkit's deploy workflow and the server's program already use; any other
+# example hosts, the tools' and registries' hosts, pubrules itself, and the names
+# pubrules's deploy workflow and the server's program already use; any other
 # host, and any other mention of the owner, is a consumer's.
 DEPLOY = ("src/pubdeploy", "tests/fixtures/deploy-app", "tests/features/deploy-*.feature",
           "tests/steps/deploy_*.py", "tests/steps/test_deploy_*.py", ".github/workflows/deploy-check.yml",
           ".github/workflows/k8s-deploy.yml", "actions/deploy-ssh", "k8s/components")
 # config.py names the owner of pubdeploy's own repository, whose workflows a
-# repository calls, as pubkit's refs.py does.
+# repository calls, as pubrules's refs.py does.
 OWN_OWNER = {"src/pubdeploy/config.py"}
 # A host, not a module path such as .types.net.
 HOST = re.compile(r"(?<![.\w])(?:[a-z0-9-]+\.)+(?:eu|com|org|net|io|dev|app|cloud)\b")
@@ -49,7 +49,7 @@ def consumer_names(text: str) -> set[str]:
              if not EXAMPLE_HOSTS.search(h) and h not in TOOL_HOSTS and not h.endswith(TOOL_DOMAINS)}
     for m in OWNER.finditer(text):
         word = m.group(0)
-        if word.upper().startswith("SUSTENAUT_") or word in OWNER_NAMES or text[m.start():].startswith(("Sustenaut/pubkit", "Sustenaut/pubdeploy", "Sustenaut/pubsec", "Sustenaut/integrations", "Sustenaut/pubrel", "Sustenaut/pubhost")):
+        if word.upper().startswith("SUSTENAUT_") or word in OWNER_NAMES or text[m.start():].startswith(("Sustenaut/pubrules", "Sustenaut/pubdeploy", "Sustenaut/pubsec", "Sustenaut/integrations", "Sustenaut/pubrel", "Sustenaut/pubhost")):
             continue
         found.add(m.group(1))
     return found

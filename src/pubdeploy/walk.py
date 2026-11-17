@@ -75,8 +75,8 @@ def timed(kind: NeedType, need: Need, ctx: Context, step: str = "check") -> Resu
 
 
 def foreign(given: object) -> Result | None:
-    """A Result, from pubkit's or from any object with its state and summary,
-    as a provider that imports nothing of pubkit's returns."""
+    """A Result, from pubrules's or from any object with its state and summary,
+    as a provider that imports nothing of pubrules's returns."""
     if isinstance(given, Result):
         return given
     state, summary = getattr(given, "state", None), getattr(given, "summary", None)

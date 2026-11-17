@@ -1,7 +1,7 @@
 Feature: pubdeploy names no repository that consumes it
-  What identifies a consumer lives on the consumer's side, in its pubkit.json.
+  What identifies a consumer lives on the consumer's side, in its pubrules.json.
   pubdeploy, its tests and its example service may name example hosts, the
-  tools' and registries' hosts, pubkit and pubdeploy, and the names the
+  tools' and registries' hosts, pubrules and pubdeploy, and the names the
   deploy workflow and the server's program already use.
 
   Scenario: pubdeploy, its tests and its example service name no consumer
@@ -33,4 +33,4 @@ Feature: pubdeploy names no repository that consumes it
       | SUSTENAUT_SERVER, SUSTENAUT_DEPLOY_SSH_KEY            |
       | the sustenaut.needs group, and sustenaut-app          |
       | https://github.com/Sustenaut/pubdeploy/blob/main/x.json |
-      | https://github.com/Sustenaut/pubkit/blob/main/x.json  |
+      | https://github.com/Sustenaut/pubrules/blob/main/x.json  |

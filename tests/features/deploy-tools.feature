@@ -1,4 +1,4 @@
-Feature: The tools `pubkit deploy check` reaches outside a test's fakes
+Feature: The tools `pubrules deploy check` reaches outside a test's fakes
   kustomize, kubectl, HTTP, dig and git, each given a stand-in, never the
   real one, and the command run whole, as a person runs it.
 
@@ -71,11 +71,11 @@ Feature: The tools `pubkit deploy check` reaches outside a test's fakes
   Scenario: Deploy check runs whole
     Then deploy check runs whole
 
-  Scenario: Deploy check reads only a pubkit json beside the repository
-    Then deploy check reads only a pubkit json beside the repository
+  Scenario: Deploy check reads only a pubrules json beside the repository
+    Then deploy check reads only a pubrules json beside the repository
 
-  Scenario: A providers result need not be pubkits
-    Then a providers result need not be pubkits
+  Scenario: A providers result need not be pubruless
+    Then a providers result need not be pubruless
 
   Scenario: A fulfil over its budget is left
     Then a fulfil over its budget is left

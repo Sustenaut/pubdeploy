@@ -1,4 +1,4 @@
-"""Steps for pubkit deploy check --offline: the shared ones are deploy_steps.py's."""
+"""Steps for pubrules deploy check --offline: the shared ones are deploy_steps.py's."""
 
 from __future__ import annotations
 

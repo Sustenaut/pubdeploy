@@ -11,7 +11,7 @@ import sys
 from typing import Any
 
 
-# A copy of pubkit's protect.gh.
+# A copy of pubrules's protect.gh.
 def gh(method: str, path: str, body: Any = None) -> Any:
     """One GitHub API call through `gh api`; its JSON, or None when empty."""
     argv = ["gh", "api", "-X", method, "-H", "Accept: application/vnd.github+json", path]
@@ -24,7 +24,7 @@ def gh(method: str, path: str, body: Any = None) -> Any:
     return json.loads(proc.stdout) if proc.stdout.strip() else None
 
 
-# A copy of pubkit's protect.ApiError; pubsec's types read its .status.
+# A copy of pubrules's protect.ApiError; pubsec's types read its .status.
 class ApiError(Exception):
     """A refused call: gh's message, then the reasons GitHub's response gives."""
 
@@ -39,7 +39,7 @@ class ApiError(Exception):
         super().__init__("; ".join([message, *reasons]))
 
 
-# A copy of pubkit's protect.gh_set.
+# A copy of pubrules's protect.gh_set.
 def gh_set(kind: str, name: str, repo: str, value: str, environment: str | None = None) -> str | None:
     """Set one secret or variable in `repo` through gh, the value on its standard
     input; what gh said if it refused, else None."""
@@ -49,7 +49,7 @@ def gh_set(kind: str, name: str, repo: str, value: str, environment: str | None 
     return done.stderr.strip() if done.returncode != 0 else None
 
 
-# A copy of pubkit's protect.origin.
+# A copy of pubrules's protect.origin.
 def origin() -> str:
     """OWNER/NAME of the GitHub repository `origin` points at."""
     proc = subprocess.run(["git", "remote", "get-url", "origin"],
