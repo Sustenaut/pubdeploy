@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.4.4 is released as v0.4.4 from commit 5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d.",
+      "content": "pubdeploy 0.5.0 is released as v0.5.0 from commit dde00366c2ebe6b45880ed7b29b7bc05b91e4981.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.4.4",
+            "0.5.0",
             "pubdeploy --version",
-            "pubdeploy 0.4.4",
-            "v0.4.4",
-            "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
+            "pubdeploy 0.5.0",
+            "v0.5.0",
+            "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
           ]
         ]
       },
-      "scope": "the published release v0.4.4 of pubdeploy",
+      "scope": "the published release v0.5.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
+          "revision": "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.4.4 was released on 2026-11-17 from commit 5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d with these changes.",
+      "content": "pubdeploy 0.5.0 was released on 2026-11-17 from commit dde00366c2ebe6b45880ed7b29b7bc05b91e4981 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,23 +57,19 @@
         ],
         "rows": [
           [
-            "added",
-            "bitwarden.adopt is one of pubsec's types, so a block naming it without pubsec in deploy.providers says so"
-          ],
-          [
-            "added",
-            "k8s.job-once: a one-off Job (a backfill, a migration) made from a CronJob's template or a manifest, with args and a timeout, run once; ready when it completed, unknown while it runs, drift when it failed, made again only with rerun: if-failed, and the plan names the Job a rerun deletes"
+            "changed",
+            "pubkit is now pubrules: the walk reads the deploy block from pubrules.json, the launcher it writes sits beside ./pubrules, its messages and the k8s-deploy and deploy-check workflows name pubrules, and the repository itself runs on pubrules 0.43.0"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.4.4 of pubdeploy",
+      "scope": "the published release v0.5.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "5bffbd702ad9eb8860edc31ecf1f3f523b4cb77d"
+          "revision": "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
         }
       ]
     }
