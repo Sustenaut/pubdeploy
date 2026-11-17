@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "bitwarden.adopt is one of pubsec's types, so a block naming it without pubsec in deploy.providers says so"
-}
