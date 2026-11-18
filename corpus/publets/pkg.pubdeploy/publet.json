@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.5.1 is released as v0.5.1 from commit 71b6fa9349bbf9a9c5506d0e40dad3080cce9e82.",
+      "content": "pubdeploy 0.5.2 is released as v0.5.2 from commit 3d7ec02e9e1bd9a107548c233c3efadee20ab2ab.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.5.1",
+            "0.5.2",
             "pubdeploy --version",
-            "pubdeploy 0.5.1",
-            "v0.5.1",
-            "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
+            "pubdeploy 0.5.2",
+            "v0.5.2",
+            "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
           ]
         ]
       },
-      "scope": "the published release v0.5.1 of pubdeploy",
+      "scope": "the published release v0.5.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
+          "revision": "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.5.1 was released on 2026-11-18 from commit 71b6fa9349bbf9a9c5506d0e40dad3080cce9e82 with these changes.",
+      "content": "pubdeploy 0.5.2 was released on 2026-11-18 from commit 3d7ec02e9e1bd9a107548c233c3efadee20ab2ab with these changes.",
       "data": {
         "columns": [
           {
@@ -58,22 +58,26 @@
         "rows": [
           [
             "added",
-            "pubdeploy machine prints a unit's needs as a state machine (a documented subset of XState v5 JSON, which python-statemachine runs too: machine.load); the deploy block's run section (schema 1: default_mode, parallel, a need's mode and after-edges) may only narrow the generated default, and pubrules sync --check checks it; need types say serial and stop (signal, shorten, continue with a stop_warning); walk --need ID walks, and with --fulfil fulfils, only those needs, refusing when one they wait for is not ready; --budget-seconds caps a check or a fulfil"
+            "k8s.jwks names where it read the pinned file: the commit of the clone it sits in, in the details; with repository (OWNER/NAME), its fixes name that repository, and a file in another repository's clone that is not there is drift, saying to clone it"
           ],
           [
             "fixed",
-            "pubdeploy machine --mode fulfil sets only the run section's default_mode and keeps its per-need modes (--mode check still makes every need a check, --modes is over both); a need the walk could not judge ends in a final unknown state (guard is_unknown) instead of blocked; a walk's check or fulfil is waited for in slices, and SIGUSR1 (a live run's Stop that shortens) ends the running one as unknown, keeping the journal"
+            "A check or fulfil a Stop would shorten no longer starts once the walk is shortened"
+          ],
+          [
+            "fixed",
+            "The need machine sends only an auto need in mode fulfil from found to fulfilling; propose, human and none end at found, as the walk acts on them"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.5.1 of pubdeploy",
+      "scope": "the published release v0.5.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
+          "revision": "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
         }
       ]
     }

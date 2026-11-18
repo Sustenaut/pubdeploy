@@ -1,4 +1,0 @@
-{
-  "category": "fixed",
-  "change": "The need machine sends only an auto need in mode fulfil from found to fulfilling; propose, human and none end at found, as the walk acts on them"
-}
