@@ -9,7 +9,9 @@ Feature: pubrules k8s preflight checks the Secrets a deploy reads before anythin
   shows why the pods of a failed rollout are not ready.
 
   Background:
-    Given the sample manifests
+    Given a scratch directory
+    And the program under test is "pubdeploy"
+    And the sample manifests
 
   Scenario: Every Secret is there, with its keys
     Given the namespace "example" holds every Secret the sample reads

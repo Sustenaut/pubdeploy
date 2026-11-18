@@ -14,8 +14,7 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
+from deploy_steps import *  # noqa: F403 - the shared steps, and the fixtures pytest-bdd keeps them as
 from deploy_world import CANARY, run, world  # noqa: F401 - the fixture
 from pubdeploy import load
 from pubdeploy.model import Need, Result
@@ -61,9 +60,10 @@ def in_state(world, state):
     STATES[state](world)
 
 
-@when(parsers.parse('pubdeploy runs "{argv}"'))
-def runs(world, capsys, argv):
-    run(world, capsys, *argv.split())
+@when(parsers.parse('pubdeploy runs "{argv}"'), target_fixture="result")
+def runs(world, ctx, argv):
+    run(world, ctx, *argv.split())
+    return ctx.outcome
 
 
 @then("no value is printed, passed to a program or kept in the journal")
@@ -74,84 +74,73 @@ def no_value(world):
     assert not world.leaked(), world.leaked()[0][:500]
 
 
-@then("an exception holding a value is not shown")
-def an_exception_holding_a_value_is_not_shown(world, capsys):
-    class Leaky:
-        type, grade, budget, offline, schema = "example.leaky", "none", 1.0, True, {}
+class Leaky:
+    """A need type whose check or fulfil raises, its message holding a value."""
 
-        def default_name(self, params):
-            return None
+    type, budget, offline, schema = "example.leaky", 1.0, True, {}
 
-        def depends_on(self, need, needs):
-            return []
+    def __init__(self, grade, raises, message):
+        self.grade, self.raises, self.message = grade, raises, message
 
-        def check(self, need, ctx):
-            raise ValueError(f"the value is {CANARY}")
+    def default_name(self, params):
+        return None
 
-        def fulfil(self, need, ctx):
-            raise NotImplementedError("phase 2")
+    def depends_on(self, need, needs):
+        return []
 
-    need = Need("example.leaky", "one", {})
-    journal = walk({need.id: need}, {"example.leaky": Leaky()}, world.context(), service={})
-    world.journal = journal.document()
-    (_, result), = journal.entries
-    assert result.state == "unknown"
-    assert result.summary == "the check failed (ValueError)"
-    assert CANARY not in journal.json()
+    def check(self, need, ctx):
+        if self.raises == "check":
+            raise ValueError(self.message)
+        return Result("missing", "not there")
 
-
-@then("a value in the rendered manifests is not shown")
-def a_value_in_the_rendered_manifests_is_not_shown(world, capsys):
-    world.rendered += ("---\napiVersion: v1\nkind: Secret\nmetadata: {name: example-held, namespace: example}\n"
-                       f"stringData: {{cookie: {CANARY}}}\n")
-    run(world, capsys, "check", "--offline")
-    assert CANARY not in world.stdout + world.stderr
+    def fulfil(self, need, ctx):
+        if self.raises == "fulfil":
+            raise ValueError(self.message)
+        raise NotImplementedError("phase 2")
 
 
-@then("every result of the sound fixture is free of values")
-def every_result_of_the_sound_fixture_is_free_of_values(world):
-    ctx = world.context()
-    plan = load(world.root, world.config, ctx)
-    journal = walk(plan.needs, types(), ctx, service={})
-    world.journal = journal.document()
-    assert all(isinstance(r, Result) for _, r in journal.entries)
-    assert CANARY not in journal.json()
+@given(parsers.parse('a need type "{kind}" whose {part} raises, saying "{message}"'))
+def leaky(world, kind, part, message):
+    world.kinds = {kind: Leaky("none" if part == "check" else "auto", part, message)}
 
 
-@then("a fulfil that raises holding a value is not shown")
-def a_fulfil_that_raises_holding_a_value_is_not_shown(world):
+def walked(world, ctx, also_fulfil):
     from pubdeploy.walk import fulfil  # noqa: PLC0415
+    (kind,) = world.kinds
+    need = Need(kind, "one", {})
+    context = world.context()
 
-    class Leaky:
-        type, grade, budget, offline, schema = "example.leaky", "auto", 1.0, True, {}
-
-        def default_name(self, params):
-            return None
-
-        def depends_on(self, need, needs):
-            return []
-
-        def check(self, need, ctx):
-            return Result("missing", "not there")
-
-        def fulfil(self, need, ctx):
-            raise ValueError(f"the value is {CANARY}")
-
-    need = Need("example.leaky", "one", {})
-    kinds = {"example.leaky": Leaky()}
-    ctx = world.context()
-    journal = fulfil(walk({need.id: need}, kinds, ctx, service={}), kinds, ctx, {need.id})
-    world.journal = journal.document()
-    (_, result), = journal.entries
-    assert result.state == "missing" and result.details[0].startswith("fulfil failed: the fulfil failed (ValueError)")
-    assert CANARY not in journal.json()
+    def action():
+        journal = walk({need.id: need}, world.kinds, context, service={})
+        if also_fulfil:
+            journal = fulfil(journal, world.kinds, context, {need.id})
+        world.journal = journal.document()
+        return json.loads(journal.json())
+    ctx.attempt(action)
 
 
-@then("generated values stay in the walk")
-def generated_values_stay_in_the_walk(world, capsys):
-    """ctx.values holds what a fulfil made: never journaled, printed or kept."""
-    world.env.pop("EXAMPLE_COOKIE_SECRET")
-    run(world, capsys, "walk", "--fulfil", "--yes", "--json")
-    made = world.written["example-cookie-secret"]
-    assert made in world.values
-    assert made not in "".join(world.outputs) + json.dumps(world.journal)
+@when(parsers.parse('its need "one" is walked'))
+def walk_one(world, ctx):
+    walked(world, ctx, False)
+
+
+@when(parsers.parse('its need "one" is walked and fulfilled'))
+def walk_and_fulfil_one(world, ctx):
+    walked(world, ctx, True)
+
+
+@when("the example service's needs are walked")
+def walk_example(world, ctx):
+    context = world.context()
+
+    def action():
+        journal = walk(load(world.root, world.config, context).needs, types(), context, service={})
+        world.journal = journal.document()
+        return {"journal": json.loads(journal.json()),
+                "results": sorted({type(r).__name__ for _, r in journal.entries})}
+    ctx.attempt(action)
+
+
+@then(parsers.parse('Bitwarden was given a value the walk generated for "{name}"'))
+def generated(world, name):
+    assert world.written[name] in world.values, "Bitwarden was given a value the walk did not generate"

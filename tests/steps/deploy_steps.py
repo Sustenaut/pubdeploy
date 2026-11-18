@@ -78,11 +78,6 @@ def is_after(world, need_id, other):
     entry(world, need_id).setdefault("after", []).append(other)
 
 
-@given(parsers.parse('the file "{path}" is gone'))
-def gone(world, path):
-    (world.root / path).unlink()
-
-
 @given("the deploy block lists its needs the other way round")
 def reversed_needs(world):
     world.block["needs"].reverse()
@@ -195,10 +190,9 @@ def offers_bad(offered, dist, part, value):
 
 
 @when(parsers.re(r'I run pubdeploy (?P<args>(?:"[^"]*" ?)+)'), target_fixture="result")
-def run_pubdeploy(world, capsys, args):
-    argv = args.strip().strip('"').split('" "')
-    code = run(world, capsys, *argv)
-    return SimpleNamespace(code=code, stdout=world.stdout, stderr=world.stderr)
+def run_pubdeploy(world, ctx, args):
+    run(world, ctx, *args.strip().strip('"').split('" "'))
+    return ctx.outcome
 
 
 @when("I check the deploy block")
@@ -493,11 +487,6 @@ def no_render(world):
     world.render_error = Stop("kustomize build k8s failed: no")
 
 
-@given(parsers.parse('the file "{path}" holds only a comment'))
-def only_comment(world, path):
-    (world.root / path).write_text("# nothing to apply\n")
-
-
 @given(parsers.parse('the file "{path}" pins the keys {keys}'))
 def pins_keys(world, path, keys):
     """Keys as kid=n, comma-separated, as k8s-jwks.json pins them."""
@@ -516,17 +505,6 @@ def cluster_garbled(world):
 @given(parsers.parse("the cluster signs with the keys {keys}"))
 def cluster_signs(world, keys):
     world.cluster["jwks"] = dict(k.strip().split("=") for k in keys.split(","))
-
-
-@given(parsers.parse('the file "{path}" is committed'))
-def committed(world, path):
-    import subprocess  # noqa: PLC0415
-    run = lambda *a: subprocess.run(["git", "-C", str(world.root), *a], check=True, capture_output=True)  # noqa: E731
-    if not (world.root / ".git").exists():
-        run("init", "-q")
-    run("add", path)
-    run("-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false",
-        "commit", "-q", "-m", "pin", "--", path)
 
 
 @given(parsers.parse('the file "{path}" was committed {days:d} days ago'))
@@ -553,12 +531,6 @@ def fetched_ago(world, hours):
     fetch_head.write_text("")
     then = time.time() - hours * 3600
     os.utime(fetch_head, (then, then))
-
-
-@given(parsers.parse('the file "{path}" holds "{text}"'))
-def file_holds(world, path, text):
-    (world.root / path).parent.mkdir(parents=True, exist_ok=True)
-    (world.root / path).write_text(text + "\n")
 
 
 @given(parsers.parse('the need "{need_id}" fills the key "{key}"'))
@@ -832,11 +804,6 @@ def gh_set(world, kind, name):
 @then(parsers.parse('a Job was made from the CronJob "{name}"'))
 def job_made(world, name):
     assert any(j.startswith(f"{name}-pubrules-") for j in world.cluster.get("jobs", [])), world.cluster.get("jobs")
-
-
-@then(parsers.parse('stderr does not mention "{text}"'))
-def stderr_lacks(world, text):
-    assert text not in world.stderr, world.stderr
 
 
 # --- the phase 2 types ------------------------------------------------------------------------------
@@ -1151,11 +1118,6 @@ def fulfilled_only(world, need_id):
 def job_completed(world, job, hours):
     namespace(world).setdefault("job", []).append({"metadata": {"name": job}, "status": {
         "succeeded": 1, "completionTime": (NOW - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")}})
-
-
-@then(parsers.parse('it does not print "{text}"'))
-def not_printed(world, text):
-    assert text not in world.stdout, world.stdout
 
 
 @given("the cluster's objects differ from the manifests")

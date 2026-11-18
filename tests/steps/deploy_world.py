@@ -495,19 +495,30 @@ def key_value(key_id: str) -> str:
     return base64.b64encode(json.dumps({"private_key_id": key_id, "private_key": CANARY}).encode()).decode()
 
 
-def run(world: World, capsys, *argv: str) -> int:
-    """`pubdeploy ARGV`, in-process, in the world's repository: its exit code,
-    with what it printed kept for the canary and the steps."""
+def run(world: World, ctx, *argv: str) -> int:
+    """`pubdeploy ARGV`, in-process, in the world's repository, as the
+    scenario's action, read as `When I run` reads a program: its exit code,
+    and what it printed, with the message it exits with on stderr, as
+    Python prints it. What it printed is kept for the canary too."""
+    import sys  # noqa: PLC0415
     from pubdeploy.cli import main  # noqa: PLC0415
     world.save()
-    try:
-        code = main(list(argv))
-    except SystemExit as e:
-        world.outputs.append(str(e.code))
-        code = e.code if isinstance(e.code, int) else 1
-    out, err = capsys.readouterr()
-    world.outputs += [out, err]
-    world.stdout, world.stderr, world.code = out, err, code
-    if "--json" in argv and out.strip():
-        world.journal = json.loads(out)
-    return code
+
+    def pubdeploy() -> int:
+        try:
+            return main(list(argv))
+        except SystemExit as e:
+            if e.code is None or isinstance(e.code, int):
+                return e.code or 0
+            print(e.code, file=sys.stderr)
+            return 1
+    ctx.attempt(pubdeploy)
+    outcome = ctx.outcome
+    if outcome.refused is not None:  # it crashed: the scenario fails with it, as it would without pubtest
+        raise outcome.refused.error
+    outcome.code = outcome.value
+    world.outputs += [outcome.stdout, outcome.stderr]
+    world.stdout, world.stderr, world.code = outcome.stdout, outcome.stderr, outcome.code
+    if "--json" in argv and outcome.stdout.strip():
+        world.journal = json.loads(outcome.stdout)
+    return outcome.code

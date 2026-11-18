@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import base64
 import json
+import shlex
 import shutil
 import sys
 from pathlib import Path
 
 import pytest
 import yaml
+from pubtest.steps.programs import run_command
 from pytest_bdd import given, parsers, scenarios, then, when
 
 scenarios("k8s-preflight.feature")
@@ -201,29 +203,26 @@ def write(tmp_path, cluster, manifests) -> Path:
 
 
 @when(parsers.parse('I preflight the sample in "{ns}"'), target_fixture="result")
-def preflight(tmp_path, run, cluster, manifests, ns):
+def preflight(tmp_path, ctx, cluster, manifests, ns):
     path = write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubrules  # noqa: PLC0415
-    return run(pubrules(), "k8s", "preflight", "--namespace", ns, "--kubectl", cluster["kubectl"],
-               stdin=path.read_text())
+    return run_command(ctx, f"pubdeploy k8s preflight --namespace {ns} --kubectl {cluster['kubectl']}", path.read_text())
 
 
 @when("I preflight the sample offline", target_fixture="result")
-def preflight_offline(tmp_path, run, cluster, manifests):
+def preflight_offline(tmp_path, ctx, cluster, manifests):
     path = write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubrules  # noqa: PLC0415
-    return run(pubrules(), "k8s", "preflight", "--namespace", "example", "--offline",
-               "--kubectl", cluster["kubectl"], stdin=path.read_text())
+    return run_command(ctx, f"pubdeploy k8s preflight --namespace example --offline --kubectl {cluster['kubectl']}",
+                path.read_text())
 
 
 @when("I run the preflight's file alone, offline", target_fixture="result")
-def file_alone(tmp_path, run, cluster, manifests):
+def file_alone(tmp_path, ctx, cluster, manifests):
     path = write(tmp_path, cluster, manifests)
     alone = tmp_path / "alone"
     alone.mkdir()
     shutil.copy(SOURCE, alone / "k8s.py")
-    return run(sys.executable, "-I", str(alone / "k8s.py"), "preflight", "--namespace", "example",
-               "--offline", stdin=path.read_text(), cwd=alone)
+    return run_command(ctx, shlex.join([sys.executable, "-I", str(alone / "k8s.py"), "preflight", "--namespace", "example",
+                                 "--offline"]), path.read_text())
 
 
 def calls(tmp_path) -> list[list[str]]:
@@ -250,12 +249,6 @@ def no_value(result, cluster):
             assert shown not in out, f"a value is printed: {out}"
 
 
-@then(parsers.parse('it does not print "{text}"'))
-def does_not_print(result, text):
-    out = result.stdout.decode() if isinstance(result.stdout, bytes) else result.stdout
-    assert text not in out, out
-
-
 @given(parsers.parse('the pod "{pod}" crash-loops, its container "{name}" exiting 1 with "{line}"'))
 def crash_loops(cluster, pod, name, line):
     cluster.setdefault("pods", []).append({
@@ -280,7 +273,6 @@ def ready(cluster, pod):
 
 
 @when(parsers.parse('I diagnose "{ns}"'), target_fixture="result")
-def diagnose(tmp_path, run, cluster, manifests, ns):
+def diagnose(tmp_path, ctx, cluster, manifests, ns):
     write(tmp_path, cluster, manifests)
-    from conftest import pubdeploy as pubrules  # noqa: PLC0415
-    return run(pubrules(), "k8s", "diagnose", "--namespace", ns, "--kubectl", cluster["kubectl"])
+    return run_command(ctx, f"pubdeploy k8s diagnose --namespace {ns} --kubectl {cluster['kubectl']}", None)

@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pubtest.steps.programs import run_command
 from pytest_bdd import given, parsers, scenarios, then, when
 
 scenarios("k8s.feature")
@@ -259,62 +260,59 @@ def script(job, name):
     return next(s for s in data["jobs"][job]["steps"] if s.get("name") == name)["run"]
 
 
-def run_script(tmp_path, gh, text, env):
+def run_script(ctx, tmp_path, monkeypatch, gh, text, env):
+    """The step's script, as GitHub runs it, with the fake gh first on PATH:
+    what it writes to $GITHUB_OUTPUT is in tmp_path/output."""
     state = tmp_path / "gh.json"
     state.write_text(json.dumps({k: v for k, v in gh.items() if k != "bin"}))
-    out = tmp_path / "output"
-    out.write_text("")
+    (tmp_path / "output").write_text("")
     path = tmp_path / "step.sh"
     path.write_text(text)
-    done = subprocess.run(["bash", "--noprofile", "--norc", "-eo", "pipefail", str(path)],
-                          capture_output=True, text=True, check=False, timeout=60,
-                          env={"PATH": f"{gh['bin']}:/usr/bin:/bin", "FAKE_GH": str(state),
-                               "GITHUB_OUTPUT": str(out), "GH_TOKEN": "t", "REPO": "example/service",
-                               **env})
-    return {"code": done.returncode, "stdout": done.stdout + done.stderr, "stderr": done.stderr,
-            "output": out.read_text()}
-
-
-class Result:
-    def __init__(self, done):
-        self.code, self.stdout, self.stderr, self.output = (
-            done["code"], done["stdout"], done["stderr"], done["output"])
+    for name, value in {"PATH": f"{gh['bin']}:/usr/bin:/bin", "FAKE_GH": str(state),
+                        "GITHUB_OUTPUT": str(tmp_path / "output"), "GH_TOKEN": "t", "REPO": "example/service",
+                        **env}.items():
+        monkeypatch.setenv(name, value)
+    return run_command(ctx, f"bash --noprofile --norc -eo pipefail {path}", None)
 
 
 @when("ready runs for the commit", target_fixture="result")
-def ready_runs(tmp_path, gh):
-    return ready_requiring(tmp_path, gh, "main ?integrations")
+def ready_runs(ctx, tmp_path, monkeypatch, gh):
+    return ready_requiring(ctx, tmp_path, monkeypatch, gh, "main ?integrations")
 
 
 @when(parsers.parse('ready runs for the commit, requiring "{require}"'), target_fixture="result")
-def ready_requiring(tmp_path, gh, require):
+def ready_requiring(ctx, tmp_path, monkeypatch, gh, require):
     (tmp_path / "gh.json.count").unlink(missing_ok=True)
-    return Result(run_script(tmp_path, gh, script("ready", "Wait for the commit's checks"),
-                             {"SHA": SHA, "REQUIRE": require, "WAIT": "1", "GRACE": "0", "INTERVAL": "0"}))
+    return run_script(ctx, tmp_path, monkeypatch, gh, script("ready", "Wait for the commit's checks"),
+               {"SHA": SHA, "REQUIRE": require, "WAIT": "1", "GRACE": "0", "INTERVAL": "0"})
+
+
+def output(tmp_path) -> str:
+    return (tmp_path / "output").read_text()
 
 
 @then("ready gives the commit")
-def gives(result):
-    assert result.output == f"sha={SHA}\n", result.output
+def gives(tmp_path):
+    assert output(tmp_path) == f"sha={SHA}\n", output(tmp_path)
 
 
 @then("ready gives no commit")
-def gives_none(result):
-    assert result.output == "", result.output
+def gives_none(tmp_path):
+    assert output(tmp_path) == "", output(tmp_path)
 
 
 @when(parsers.parse('the deploy gate runs for a "{event}"'), target_fixture="result")
-def gate_runs(tmp_path, gh, event):
-    return Result(run_script(tmp_path, gh, script("deploy", "Is it deployed?"),
-                             {"SERVER": "server.example", "UNIT": "example", "GATE": "", "GATE_VALUE": "",
-                              "EVENT": event, "BRANCH": "main", "SHA": SHA}))
+def gate_runs(ctx, tmp_path, monkeypatch, gh, event):
+    return run_script(ctx, tmp_path, monkeypatch, gh, script("deploy", "Is it deployed?"),
+               {"SERVER": "server.example", "UNIT": "example", "GATE": "", "GATE_VALUE": "",
+                "EVENT": event, "BRANCH": "main", "SHA": SHA})
 
 
 @then("the gate deploys")
-def deploys_now(result):
-    assert result.code == 0 and result.output == "deploy=true\n", result.stdout
+def deploys_now(tmp_path):
+    assert output(tmp_path) == "deploy=true\n", output(tmp_path)
 
 
 @then("the gate does not deploy")
-def does_not_deploy(result):
-    assert result.output == "", result.output
+def does_not_deploy(tmp_path):
+    assert output(tmp_path) == "", output(tmp_path)

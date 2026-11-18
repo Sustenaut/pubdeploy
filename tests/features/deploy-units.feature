@@ -49,7 +49,7 @@ Feature: A deploy block's units, each walked and journaled on its own
     Then the only problem is "deploy: needs[6]: unit nowhere is no unit of the block; it has example and other"
 
   Scenario: A unit's overlay must hold a kustomization
-    Given the file "k8s-other/kustomization.yaml" is gone
+    Given the file "k8s-other/kustomization.yaml" is removed
     When I check the deploy block
     Then the only problem is "deploy: overlay k8s-other (unit other) has no kustomization.yaml"
 

@@ -85,4 +85,5 @@ Feature: Services deploy to k3s through one workflow and one kustomize component
     And it prints "has moved on from"
     And the gate does not deploy
     When the deploy gate runs for a "workflow_dispatch"
-    Then the gate deploys
+    Then it succeeds
+    And the gate deploys

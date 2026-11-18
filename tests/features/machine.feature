@@ -74,10 +74,44 @@ Feature: A unit's needs as a state machine, which the convergence engine runs li
       | none    | never enters fulfilling              |
 
   Scenario: A region of a need that is not auto entering fulfilling is refused
-    Then a machine whose propose need's found state goes to fulfilling does not validate, saying "only an auto need in mode fulfil enters fulfilling"
+    Given the need "k8s.secret:s" graded "propose"
+    And every need in mode "fulfil"
+    When the machine is compiled
+    And the region "k8s_secret_s" in "found" sends only "approved.k8s_secret_s", to "fulfilling"
+    And the machine is validated
+    Then the result includes "only an auto need in mode fulfil enters fulfilling"
 
-  Scenario: A machine that is not one pubdeploy makes is refused, saying why
-    Then a machine whose region goes to a state it lacks, or continues on Stop without a warning, does not validate
+  Scenario: A machine of an auto need and one that continues on Stop, saying why, validates
+    Given the needs "upstream:u", and "deploy.rollout:r" that continues on Stop, warning "w"
+    When the machine is compiled
+    Then it validates
+
+  Scenario: A machine whose region goes to a state it lacks is refused, saying why
+    Given the needs "upstream:u", and "deploy.rollout:r" that continues on Stop, warning "w"
+    When the machine is compiled
+    And the region "upstream_u" in "waiting" sends "start.upstream_u" to "nowhere"
+    And the machine is validated
+    Then the result is "upstream_u.waiting: start.upstream_u goes to nowhere, which is no state of upstream_u"
+
+  Scenario: A machine whose region continues on Stop without a warning is refused, saying why
+    Given the needs "upstream:u", and "deploy.rollout:r" that continues on Stop, warning "w"
+    When the machine is compiled
+    And the region "deploy_rollout_r" has no stop_warning
+    And the machine is validated
+    Then the result is "deploy_rollout_r: meta.stop continue needs a stop_warning"
+
+  Scenario: A machine whose initial state is not running is refused
+    When the machine {"initial": "else"} is validated
+    Then the result is "the machine must be an object whose initial state is "running""
+
+  Scenario: A machine that does not validate does not load
+    Given the needs "upstream:u", and "deploy.rollout:r" that continues on Stop, warning "w"
+    When the machine is compiled
+    And the region "upstream_u" in "waiting" sends "start.upstream_u" to "nowhere"
+    And the region "deploy_rollout_r" has no stop_warning
+    And the machine is loaded
+    Then it is refused, saying "deploy_rollout_r: meta.stop continue needs a stop_warning; upstream_u.waiting: start.upstream_u goes to nowhere"
+    And the refusal is a "ValueError"
 
   Scenario Outline: python-statemachine and XState v5 run the machine alike
     Given the needs "k8s.namespace:a", "k8s.secret:s" after "k8s.namespace:a", and "upstream:u"

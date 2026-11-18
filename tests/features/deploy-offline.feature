@@ -82,13 +82,13 @@ Feature: pubrules deploy check --offline checks what needs no network
     And it prints "unknown k8s.secrets-declared:example  the overlay could not be rendered"
 
   Scenario: A manifest file that holds no object is drift
-    Given the file "k8s/admin/network-policy.yaml" holds only a comment
+    Given a file "k8s/admin/network-policy.yaml" holding "# nothing to apply"
     When I run pubdeploy "check" "--offline"
     Then the exit code is 1
     And it prints "drift   k8s.manifests:k8s/admin/network-policy.yaml  k8s/admin/network-policy.yaml holds no object"
 
   Scenario: A manifest file that is not YAML is drift
-    Given the file "k8s/admin/network-policy.yaml" holds "{ not: yaml"
+    Given a file "k8s/admin/network-policy.yaml" holding "{ not: yaml"
     When I run pubdeploy "check" "--offline"
     Then the exit code is 1
     And it prints "drift   k8s.manifests:k8s/admin/network-policy.yaml  k8s/admin/network-policy.yaml cannot be read as manifests"
