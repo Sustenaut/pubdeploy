@@ -68,12 +68,16 @@
   ],
   "exclude": [
     {
-      "path": "tests/**",
-      "reason": "Fakes of these services"
-    },
-    {
       "path": "corpus/**",
       "reason": "Release records, not code"
+    },
+    {
+      "path": "pyproject.toml",
+      "reason": "Names files.pythonhosted.org only as python-statemachine's wheel address, pinned by its sha256: a dependency downloaded, nothing published to PyPI"
+    },
+    {
+      "path": "tests/**",
+      "reason": "Fakes of these services"
     }
   ]
 }

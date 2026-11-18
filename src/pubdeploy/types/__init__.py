@@ -21,6 +21,13 @@ class Base:
     offline = False
     singleton = False
     needs_of_context: tuple[str, ...] = ()  # what requires() says, for every need of the type
+    # How a live run treats it (machine.py): `serial` chains a kind's needs one after the
+    # other; `stop` is what a Stop does while it is fulfilled: signal (end the walk),
+    # shorten (end it once the time left is up) or continue (it runs on, and `stop_warning`
+    # says why).
+    serial = False
+    stop = "signal"
+    stop_warning = ""
 
     def default_name(self, params: dict[str, Any]) -> str | None:
         return None

@@ -4,7 +4,11 @@ and making it; and the checks a deploy to Kubernetes runs.
     pubdeploy walk [--fulfil] [--yes] [--unit NAME] [--kubectl CMD] [--server HOST]
                    [--zones PATH]... [--journal URL] [--json] [--offline] [--namespace NS]
                    [--tolerate-unknown]
+    pubdeploy walk ... --need ID [--need ID]... [--budget-seconds S]
+                                         only those needs: what a live run walks
     pubdeploy check ...                  walk without --fulfil
+    pubdeploy machine [--unit U] [--mode check|fulfil] [--modes ID=MODE,...]
+                                         the unit's needs as a state machine (XState JSON)
     pubdeploy types                      every need type, and its keys
     pubdeploy k8s preflight|diagnose     before an apply, and after a failed rollout
     pubdeploy sync-check [--check]       what `pubrules sync` runs of pubdeploy's
@@ -59,9 +63,20 @@ def main(argv: list[str] | None = None) -> int:
                             "keeps the zone of a unit's host; one per owner whose zones the hosts are in")
         p.add_argument("--journal", metavar="URL", help="also write the journal to storage (or PUBRULES_JOURNAL_URL)")
         p.add_argument("--namespace", metavar="NS", help="another namespace than the unit's")
+        p.add_argument("--need", metavar="ID", action="append", dest="needs",
+                       help="walk only this need (repeat it): the needs it waits for are checked, never "
+                            "fulfilled, and when one of those it waits for directly is not ready nothing is "
+                            "done (exit 2)")
+        p.add_argument("--budget-seconds", type=float, metavar="S",
+                       help="the most a check or a fulfil may take, below its type's budget")
     commands.add_parser("types", help="every need type pubdeploy and the installed packages offer, and its keys")
     commands.add_parser("k8s", help="check the Secrets rendered manifests read before a deploy, or show "
                                     "why a rollout failed (pubdeploy k8s --help)")
+    p = commands.add_parser("machine", help="the unit's needs as a state machine (XState JSON), which the "
+                                            "convergence engine runs live")
+    p.add_argument("--unit", metavar="NAME", help="the unit; needed when the block has several")
+    p.add_argument("--mode", choices=("check", "fulfil"), help="every need in this mode")
+    p.add_argument("--modes", metavar="ID=MODE,...", default="", help="a need's own mode, over --mode")
     p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubrules sync runs")
     p.add_argument("--check", action="store_true", help="fail when the deploy block is wrong")
     commands.add_parser("bump", help="move deploy.providers and the uses of pubdeploy's workflows to the "
@@ -78,6 +93,10 @@ def main(argv: list[str] | None = None) -> int:
         for line in lines:
             print(line, file=sys.stderr if line.startswith("pubdeploy:") else sys.stdout)
         return 1 if failed else 0
+    if args.command == "machine":
+        from . import run_machine  # noqa: PLC0415
+        modes = dict(pair.split("=", 1) for pair in args.modes.split(",") if "=" in pair)
+        return run_machine(root, args.unit, args.mode, modes)
     if args.command == "bump":
         from .hooks import bump  # noqa: PLC0415
         for line in bump(root):
@@ -94,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     return run_walk(root, args.offline, args.json, args.kubectl, zones, args.namespace,
                     fulfil=getattr(args, "fulfil", False), unit=args.unit, server=args.server,
                     yes=getattr(args, "yes", False), journal_url=args.journal,
-                    tolerate_unknown=args.tolerate_unknown)
+                    tolerate_unknown=args.tolerate_unknown, only=args.needs, budget_seconds=args.budget_seconds)
 
 
 if __name__ == "__main__":

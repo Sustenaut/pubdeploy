@@ -57,7 +57,7 @@ Feature: pubrules sync --check checks pubrules.json's deploy block
       | needs     | {"type": "upstream"}                     | deploy: needs must be a list of needs, each an object with a type                            |
       | needs     | [{"name": "storage"}]                    | deploy: needs[0]: type is missing                                                            |
       | needs     | ["upstream"]                             | deploy: needs[0] must be an object with a type                                               |
-      | frob      | true                                     | deploy: frob is not a setting; it takes namespace, host, workflow, gate, overlay, units, providers and needs  |
+      | frob      | true                                     | deploy: frob is not a setting; it takes namespace, host, workflow, gate, overlay, units, providers, needs and run |
 
   Scenario: The block must be an object
     Given the deploy block is []

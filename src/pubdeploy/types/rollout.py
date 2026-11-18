@@ -107,6 +107,8 @@ class Rollout(Base):
     """The latest deploy run on the default branch passed on its head, and
     every Deployment in the namespace has its replicas ready."""
     type = "deploy.rollout"
+    stop = "continue"
+    stop_warning = "the deploy workflow keeps running on GitHub; cancel the run there to end it"
     grade = "auto"
     # Two GitHub calls, then three at once, at about 0.6 s each, and a kubectl call.
     budget = 8.0

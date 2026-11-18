@@ -347,6 +347,59 @@ the process. pubdeploy itself holds no write token. A walk from GitHub Actions,
 or with `--yes` and no terminal, asks for none, and those needs are unknown,
 saying so.
 
+### A live run: the needs as a state machine
+
+The convergence engine can run a unit's needs live, each on its own, in parallel where
+they allow it. `pubdeploy machine` gives it the unit's needs as a state machine, and
+`walk --need` walks one need at a time; both are here so every need stays runnable from a
+laptop as well.
+
+```
+./pubdeploy machine --unit example                          # the machine, as XState v5 JSON
+./pubdeploy machine --unit example --mode check --modes upstream:storage=fulfil
+./with-secrets ./pubdeploy walk --fulfil --yes --need k8s.secret:example-files
+./pubdeploy check --need upstream:storage --budget-seconds 30
+```
+
+**The machine** (`machine.py`) is a documented subset of XState v5 config, so Stately's
+editor and inspector draw it and XState runs it as python-statemachine (`machine.load`)
+does: `id`, `initial`, `states`, `type` (parallel, final), `on` (event to `{target,
+guard?}` or a list), `entry`, `exit`, `meta`; guards and actions are names alone. The
+root's state `running` is parallel, a region per need, keyed by the need's id as a name
+may hold it, with the need in its `meta` (id, type, grade, mode, the keys it is after, its
+seconds, and how a Stop treats it). A region goes waiting, checking, then ready, found
+(missing or drift), blocked (blocked or unknown) or failed; in mode fulfil a found need,
+unless its grade is human, goes on `approved` to fulfilling, which ends in a re-check;
+`predecessor_failed` blocks a waiting need, and `stop` stops any need not final. Events
+carry what the guards read: `checked.KEY` a `state`, `fulfilled.KEY` an `ok`.
+
+**The run section** of the deploy block says how a live run runs the needs, and may only
+narrow what is generated:
+
+```json
+"run": {"schema": 1, "default_mode": "fulfil", "parallel": 4,
+        "needs": {"pg.database:auth": {"mode": "fulfil", "after": ["k8s.namespace:auth"]}}}
+```
+
+Without it, every need is in `default_mode` (fulfil), after the needs the walk's order
+already has it wait for, 4 at a time; the needs of a serial kind are chained, and so are
+needs touching one resource (one Secret, Terraform state or database). A section may
+change a need's mode, add after-edges and lower `parallel`; naming an unknown need, an
+edge that makes needs wait for each other, or a higher `parallel` fails `pubrules sync
+--check`. `schema` is its version: a newer one says to move to a newer pubdeploy, and an
+older one is brought up by `machine.TRANSFORMERS`, one per change of shape.
+
+**A need type's run metadata**: `serial` (chain a kind's needs) and `stop`, what a Stop does
+while the need is fulfilled: `signal` (the walk is ended; the default), `shorten` (it ends
+when the time left is up: k8s.cronjob, service.health) or `continue` (it runs on, with a
+`stop_warning` saying why: deploy.rollout, k8s.job-once).
+
+**`walk --need ID`** (repeat it) walks only those needs: the needs they wait for, by the
+walk's order and the run's after-edges, are checked, never fulfilled; when one they wait
+for directly is not ready, nothing is done (exit 2, naming it). Only the named needs are
+said, journaled and, with `--fulfil`, fulfilled. `--budget-seconds S` caps every check and
+fulfil at S seconds: what is left of a run's time.
+
 ### Provider contract
 
 A package that offers need types under `sustenaut.needs`, such as pubsec or

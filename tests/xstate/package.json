@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "description": "XState v5, which the machine scenarios drive beside python-statemachine to show both run pubdeploy's machine alike.",
+  "type": "module",
+  "dependencies": {
+    "xstate": "5.33.4"
+  }
+}

@@ -154,6 +154,9 @@ class Context:
     # What a fulfil made in this walk, by Bitwarden name: never journaled, printed or kept.
     values: dict[str, bytes] = field(default_factory=dict)
     dispatched: dict[str, datetime] = field(default_factory=dict)  # by workflow, when this walk ran it
+    # The most a check or a fulfil may take, below its type's budget: what is left of a
+    # run's time (walk --budget-seconds, a Stop that shortens), or None for the type's.
+    budget_cap: float | None = None
     # Filled in by the walk: the types, every need in the plan, and the results so far.
     types: dict[str, Any] = field(default_factory=dict)
     needs: dict[str, Need] = field(default_factory=dict)

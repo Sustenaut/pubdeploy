@@ -298,6 +298,7 @@ def when(text: str) -> datetime:
 class CronJob(Base):
     """A CronJob that succeeds as often as it runs: a service without a host."""
     type = "k8s.cronjob"
+    stop = "shorten"
     grade = "auto"
     budget = 4.0
     fulfil_budget = 300.0
@@ -425,6 +426,8 @@ class JobOnce(Base):
     made again only with `rerun: if-failed`, and then only that Job is deleted.
     The fulfil makes it and returns: the next walk sees how it went."""
     type = "k8s.job-once"
+    stop = "continue"
+    stop_warning = "the Job keeps running in the cluster; deleting it may leave its work half done"
     grade = "auto"
     budget = 4.0  # one or two kubectl reads
     fulfil_budget = 60.0

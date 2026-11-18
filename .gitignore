@@ -10,3 +10,4 @@ __pycache__/
 
 # Local secrets, such as the Bitwarden token ./with-secrets reads: never committed.
 .env
+tests/xstate/node_modules/
