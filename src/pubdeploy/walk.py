@@ -45,6 +45,8 @@ def timed(kind: NeedType, need: Need, ctx: Context, step: str = "check") -> Resu
     """One check, or one fulfil, within its budget."""
     box: list[Result | BaseException] = []
     budget = kind.budget if step == "check" else fulfil_budget(kind)
+    if ctx.budget_cap is not None:
+        budget = max(0.0, min(budget, ctx.budget_cap))
     method = kind.check if step == "check" else kind.fulfil
 
     def run() -> None:

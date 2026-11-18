@@ -37,7 +37,8 @@ OWN_OWNER = {"src/pubdeploy/config.py"}
 # A host, not a module path such as .types.net.
 HOST = re.compile(r"(?<![.\w])(?:[a-z0-9-]+\.)+(?:eu|com|org|net|io|dev|app|cloud)\b")
 EXAMPLE_HOSTS = re.compile(r"(?:^|\.)example\.(?:eu|com|org|net)$")
-TOOL_HOSTS = {"github.com", "json-schema.org", "quay.io", "ghcr.io"}
+# statemachine.io is no host: python-statemachine's io package, which machine.py imports.
+TOOL_HOSTS = {"github.com", "json-schema.org", "quay.io", "ghcr.io", "statemachine.io"}
 TOOL_DOMAINS = (".k8s.io", ".iam.gserviceaccount.com")  # Kubernetes' API groups, Google's service accounts
 OWNER = re.compile(r"(?i)\b(sustenaut|schryer)\b[-.\w]*")
 OWNER_NAMES = {"sustenaut.needs", "sustenaut.walk", "sustenaut.sync", "sustenaut.bump", "sustenaut-app"}

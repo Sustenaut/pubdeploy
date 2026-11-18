@@ -13,7 +13,12 @@ requires-python = ">=3.11"
 authors = [{ name = "David Schryer", email = "schryer@gmail.com" }]
 # PyYAML reads the manifests kustomize renders. k8s.py, which a server runs
 # as a file, needs it only for YAML.
-dependencies = ["PyYAML>=6"]
+# python-statemachine runs a unit's machine (machine.load), pinned by its wheel's address and
+# sha256 as every other dependency of the walk's is in the lock.
+dependencies = [
+    "PyYAML>=6",
+    "python-statemachine @ https://files.pythonhosted.org/packages/85/d1/d722672f4bfbe1176588157e0f9fa6dd5331a71922bed36aca0e79271535/python_statemachine-3.2.2-py3-none-any.whl#sha256=141d20e00776815692e424d3df825b1bd7ccaeedc6fda7787ddf249e767e1676",
+]
 
 [project.urls]
 Repository = "https://github.com/Sustenaut/pubdeploy"

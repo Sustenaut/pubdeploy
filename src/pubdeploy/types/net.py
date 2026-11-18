@@ -129,6 +129,7 @@ class Site(Base):
 class Health(Base):
     """The deployed service answers, and its CronJob ran."""
     type = "service.health"
+    stop = "shorten"
     grade = "auto"
     budget = 6.0
     fulfil_budget = 300.0

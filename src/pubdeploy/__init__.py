@@ -253,6 +253,10 @@ def offline_lines(root: Path, config: dict[str, Any], ctx: Context | None = None
         plan = load(root, config, given, types=loaded.types, unit=unit)
         if plan.problems:
             return lines + [f"pubdeploy: {p}" for p in plan.problems], True
+        from . import machine  # noqa: PLC0415
+        run = machine.problems(unit_block(config, unit), machine_needs(plan, loaded.types))
+        lines += [f"pubdeploy: {p}" for p in run]
+        failed = failed or bool(run)
         entries += check(plan, given, loaded.types).entries
     for need, result in entries:
         if not loaded.types[need.type].offline or result.state == "ready":
@@ -293,9 +297,101 @@ def prepare(ctx: Context, plan: list[tuple[str, str]], terminal: bool, points: A
             print(said, file=sys.stderr)
 
 
+def machine_needs(plan: Plan, types: dict[str, NeedType]) -> list[dict[str, Any]]:
+    """The plan's needs as machine.compile takes them: id, type, grade, the needs each waits
+    for, its fulfil budget, how a Stop treats it, and its params (for shared resources)."""
+    from .order import edges  # noqa: PLC0415
+    from .walk import fulfil_budget, grade_of  # noqa: PLC0415
+    waits = edges(plan.needs, types)
+    out = []
+    for i, need in plan.needs.items():
+        kind = types[need.type]
+        out.append({"id": i, "type": need.type, "grade": grade_of(kind, need), "after": sorted(waits[i]),
+                    "seconds": fulfil_budget(kind), "serial": bool(getattr(kind, "serial", False)),
+                    "stop": getattr(kind, "stop", "signal"), "stop_warning": getattr(kind, "stop_warning", ""),
+                    "params": need.params})
+    return out
+
+
+def narrow(plan: Plan, types: dict[str, NeedType], config: dict[str, Any], unit: str | None,
+           only: list[str]) -> tuple[Plan, set[str]] | str:
+    """The plan walk --need checks: the named needs and every need they wait for, by the
+    walk's order and the run's after-edges (checked, never fulfilled), and the needs they
+    wait for directly, which must be ready. Or why it cannot be walked."""
+    from dataclasses import replace  # noqa: PLC0415
+    from . import machine  # noqa: PLC0415
+    unknown = sorted(set(only) - set(plan.needs))
+    if unknown:
+        return f"--need {', '.join(unknown)} is no need of this unit; it has {', '.join(sorted(plan.needs))}"
+    needs = machine_needs(plan, types)
+    after = machine.generated_after(needs)
+    section = unit_block(config, unit).get("run") or {}
+    for name, entry in (section.get("needs") or {}).items() if isinstance(section, dict) else ():
+        if name in after and isinstance(entry, dict):
+            after[name] |= {a for a in entry.get("after", []) if a in after}
+    direct = set().union(*(after[i] for i in only)) - set(only)
+    keep, todo = set(only), list(only)
+    while todo:
+        for a in after[todo.pop()]:
+            if a not in keep:
+                keep.add(a)
+                todo.append(a)
+    sub = {i: n for i, n in plan.needs.items() if i in keep}
+    return replace(plan, needs=sub, order=[i for i in plan.order if i in keep]), direct
+
+
+def unit_block(config: dict[str, Any], unit: str | None) -> dict[str, Any]:
+    """The deploy block as the unit sees it (its run section included)."""
+    from .units import unit_block as block_of  # noqa: PLC0415
+    block = config[BLOCK]
+    return block_of(block, unit) if unit and isinstance(block, dict) and "namespace" in block else block
+
+
+def run_machine(root: Path, unit: str | None, mode: str | None, modes: dict[str, str]) -> int:
+    """`pubdeploy machine`: the unit's machine, as JSON, from pubrules.json alone."""
+    from . import machine  # noqa: PLC0415
+    from .config import read_config  # noqa: PLC0415
+    from .registry import load as registry  # noqa: PLC0415
+    from .units import names  # noqa: PLC0415
+    config = read_config(root)
+    if BLOCK not in config:
+        print(f"pubdeploy: {BLOCK}: pubrules.json has no deploy block", file=sys.stderr)
+        return 2
+    units = names(config[BLOCK]) if isinstance(config[BLOCK], dict) and "namespace" in config[BLOCK] else [None]
+    if unit is None and len(units) > 1:
+        print(f"pubdeploy: deploy: give --unit, one of {', '.join(map(str, units))}", file=sys.stderr)
+        return 2
+    unit = unit if unit is not None else units[0]
+    if unit not in units:
+        print(f"pubdeploy: deploy: --unit {unit} is no unit of the deploy block; it has {', '.join(map(str, units))}",
+              file=sys.stderr)
+        return 2
+    loaded = registry()
+    ctx = context(root, config, True, unit=unit)
+    plan = load(root, config, ctx, None, loaded.types, unit=unit)
+    if plan.problems:
+        for problem in plan.problems:
+            print(f"pubdeploy: {problem}", file=sys.stderr)
+        return 2
+    needs = machine_needs(plan, loaded.types)
+    section = unit_block(config, unit).get("run")
+    if mode:
+        section = {**(section or machine.default_section(needs, mode)), "default_mode": mode}
+        if "needs" in section:
+            section["needs"] = {k: {**v, "mode": mode} for k, v in section["needs"].items()}
+    try:
+        compiled = machine.compile(needs, section, modes)
+    except ValueError as e:
+        print(f"pubdeploy: deploy: {e}", file=sys.stderr)
+        return 2
+    print(json.dumps(compiled, indent=2))
+    return 0
+
+
 def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | None, zones: Path | list[Path] | None,
              namespace: str | None, fulfil: bool = False, unit: str | None = None, server: str | None = None,
-             yes: bool = False, journal_url: str | None = None, tolerate_unknown: bool = False) -> int:
+             yes: bool = False, journal_url: str | None = None, tolerate_unknown: bool = False,
+             only: list[str] | None = None, budget_seconds: float | None = None) -> int:
     from .config import read_config  # noqa: PLC0415
     from .registry import load as registry  # noqa: PLC0415
     from .units import names  # noqa: PLC0415
@@ -327,13 +423,30 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
             for problem in plan.problems:
                 print(f"pubdeploy: {problem}", file=sys.stderr)
             return 2
+        ctx.budget_cap = budget_seconds
+        if only:
+            narrowed = narrow(plan, loaded.types, config, name, only)
+            if isinstance(narrowed, str):
+                print(f"pubdeploy: deploy: {narrowed}", file=sys.stderr)
+                return 2
+            plan, waited = narrowed
+            journal = check(plan, ctx, loaded.types)
+            late = sorted(i for i, r in ((n.id, r) for n, r in journal.entries) if i in waited and r.state != "ready")
+            if late:
+                print(f"pubdeploy: deploy: --need {', '.join(only)} waits for {', '.join(late)}, which "
+                      f"{'is' if len(late) == 1 else 'are'} not ready: walk those first", file=sys.stderr)
+                return 2
+            walks.append((ctx, journal))
+            continue
         walks.append((ctx, check(plan, ctx, loaded.types)))
     if fulfil:
         env = walks[0][0].env
         terminal = sys.stdin.isatty() and env.get("GITHUB_ACTIONS") != "true"
         # Without a terminal, a token file the hook reads (pubsec's, for the engine's Fulfil).
         token_coming = terminal or bool(env.get("PUBSEC_WRITE_TOKEN_FILE"))
-        acts = [(ctx, planned(journal, loaded.types, ctx, token_coming=token_coming)) for ctx, journal in walks]
+        # With --need, only the named needs are ever fulfilled: the needs they wait for are checked.
+        acts = [(ctx, [(i, line) for i, line in planned(journal, loaded.types, ctx, token_coming=token_coming)
+                       if not only or i in only]) for ctx, journal in walks]
         approved: set[tuple[str, str]] = set()
         declined = False
         if any(plan for _, plan in acts):
@@ -362,6 +475,9 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
                     print(f"  unit {ctx.unit}:", file=sys.stderr)
                 for line in said:
                     print(line, file=sys.stderr)
+    if only:  # only the named needs are said and journaled
+        for _, journal in walks:
+            journal.entries = [(n, r) for n, r in journal.entries if n.id in only]
     documents = [journal.document() for _, journal in walks]
     if as_json:
         print(json.dumps(documents[0] if len(documents) == 1 else documents, indent=2))

@@ -117,6 +117,11 @@
           }
         }
       }
+    },
+    "run": {
+      "description": "How a live run (the convergence engine's) runs the needs: schema, default_mode, parallel, and per need its mode and more after-edges; it may only narrow what pubdeploy generates (pubdeploy machine).",
+      "type": "object",
+      "x-phrase": "must be an object, such as {\"schema\": 1, \"default_mode\": \"fulfil\"}"
     }
   }
 }
