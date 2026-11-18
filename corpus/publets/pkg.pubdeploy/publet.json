@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.5.0 is released as v0.5.0 from commit dde00366c2ebe6b45880ed7b29b7bc05b91e4981.",
+      "content": "pubdeploy 0.5.1 is released as v0.5.1 from commit 71b6fa9349bbf9a9c5506d0e40dad3080cce9e82.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.5.0",
+            "0.5.1",
             "pubdeploy --version",
-            "pubdeploy 0.5.0",
-            "v0.5.0",
-            "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
+            "pubdeploy 0.5.1",
+            "v0.5.1",
+            "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
           ]
         ]
       },
-      "scope": "the published release v0.5.0 of pubdeploy",
+      "scope": "the published release v0.5.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
+          "revision": "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.5.0 was released on 2026-11-17 from commit dde00366c2ebe6b45880ed7b29b7bc05b91e4981 with these changes.",
+      "content": "pubdeploy 0.5.1 was released on 2026-11-18 from commit 71b6fa9349bbf9a9c5506d0e40dad3080cce9e82 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,24 +57,28 @@
         ],
         "rows": [
           [
-            "changed",
-            "pubkit is now pubrules: the walk reads the deploy block from pubrules.json, the launcher it writes sits beside ./pubrules, its messages and the k8s-deploy and deploy-check workflows name pubrules, and the repository itself runs on pubrules 0.43.0"
+            "added",
+            "pubdeploy machine prints a unit's needs as a state machine (a documented subset of XState v5 JSON, which python-statemachine runs too: machine.load); the deploy block's run section (schema 1: default_mode, parallel, a need's mode and after-edges) may only narrow the generated default, and pubrules sync --check checks it; need types say serial and stop (signal, shorten, continue with a stop_warning); walk --need ID walks, and with --fulfil fulfils, only those needs, refusing when one they wait for is not ready; --budget-seconds caps a check or a fulfil"
+          ],
+          [
+            "fixed",
+            "pubdeploy machine --mode fulfil sets only the run section's default_mode and keeps its per-need modes (--mode check still makes every need a check, --modes is over both); a need the walk could not judge ends in a final unknown state (guard is_unknown) instead of blocked; a walk's check or fulfil is waited for in slices, and SIGUSR1 (a live run's Stop that shortens) ends the running one as unknown, keeping the journal"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.5.0 of pubdeploy",
+      "scope": "the published release v0.5.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "dde00366c2ebe6b45880ed7b29b7bc05b91e4981"
+          "revision": "71b6fa9349bbf9a9c5506d0e40dad3080cce9e82"
         }
       ]
     }
   },
-  "created": "2026-11-17T00:00:00Z",
+  "created": "2026-11-18T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",

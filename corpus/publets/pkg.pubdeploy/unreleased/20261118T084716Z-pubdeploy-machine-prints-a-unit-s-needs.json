@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "pubdeploy machine prints a unit's needs as a state machine (a documented subset of XState v5 JSON, which python-statemachine runs too: machine.load); the deploy block's run section (schema 1: default_mode, parallel, a need's mode and after-edges) may only narrow the generated default, and pubrules sync --check checks it; need types say serial and stop (signal, shorten, continue with a stop_warning); walk --need ID walks, and with --fulfil fulfils, only those needs, refusing when one they wait for is not ready; --budget-seconds caps a check or a fulfil"
-}
