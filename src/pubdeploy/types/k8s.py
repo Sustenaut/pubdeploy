@@ -448,8 +448,8 @@ def read_at(path: Path) -> list[str]:
 
 
 def fetched_hours(path: Path) -> float | None:
-    """How long ago the clone the file sits in was last fetched (FETCH_HEAD, else its tip's
-    commit date), in hours; None outside git."""
+    """How long ago the clone the file sits in was last fetched or made (FETCH_HEAD's time, else
+    HEAD's), in hours; None outside git."""
     import subprocess  # noqa: PLC0415
     import time  # noqa: PLC0415
     try:
@@ -459,13 +459,12 @@ def fetched_hours(path: Path) -> float | None:
             return None
         git_dir = Path(ran.stdout.strip())
         git_dir = git_dir if git_dir.is_absolute() else path.parent / git_dir
-        fetch_head = git_dir / "FETCH_HEAD"
-        if fetch_head.is_file():
-            return (time.time() - fetch_head.stat().st_mtime) / 3600
-        ran = subprocess.run(["git", "-C", str(path.parent), "log", "-1", "--format=%ct"], capture_output=True,
-                             text=True, timeout=10, check=False)
-        return (time.time() - int(ran.stdout.strip())) / 3600 if ran.returncode == 0 and ran.stdout.strip() else None
-    except (OSError, ValueError, subprocess.TimeoutExpired):
+        # A fetch writes FETCH_HEAD; a clone writes none, but it, like a checkout, writes HEAD.
+        for name in ("FETCH_HEAD", "HEAD"):
+            if (git_dir / name).is_file():
+                return (time.time() - (git_dir / name).stat().st_mtime) / 3600
+        return None
+    except (OSError, subprocess.TimeoutExpired):
         return None
 
 

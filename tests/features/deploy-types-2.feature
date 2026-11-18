@@ -228,6 +228,13 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
     And it prints "read from repo's clone at"
     And it prints "k8s-jwks.json was last changed in"
 
+  Scenario: A fresh clone of an old repository is not stale
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "repository": "example-org/shared-infra"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the file "infra/k8s-jwks.json" was committed 30 days ago
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is ready, "pins the cluster's 1 signing key"
+
   Scenario: A clone of the file's repository fetched over a day ago is unknown, as the pin may have moved
     Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "repository": "example-org/shared-infra"}
     And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
