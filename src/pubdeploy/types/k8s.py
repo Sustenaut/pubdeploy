@@ -357,7 +357,9 @@ class Jwks(Base):
     schema = schema({"file": {"type": "string", "minLength": 1,
                               "x-phrase": "must be the pinned file's path, from the repository's root"},
                      "keys": {"type": "integer", "minimum": 1, "maximum": 10,
-                              "x-phrase": "must be how many signing keys the cluster publishes, 1 to 10"}},
+                              "x-phrase": "must be how many signing keys the cluster publishes, 1 to 10"},
+                     "repository": {"type": "string", "pattern": r"^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$",
+                                    "x-phrase": "must be the OWNER/NAME of the repository the file is in"}},
                     ("file",))
 
     def default_name(self, params: dict[str, Any]) -> str | None:
@@ -366,13 +368,26 @@ class Jwks(Base):
 
     def check(self, need: Need, ctx: Context) -> Result:
         import json  # noqa: PLC0415
-        file = need.params["file"]
-        fix = (f"put the output of `kubectl get --raw /openid/v1/jwks` in {file} as jwks, and in every other "
+        file, owner = need.params["file"], need.params.get("repository")
+        where = f"{owner}'s {Path(file).name}" if owner else file
+        fix = (f"put the output of `kubectl get --raw /openid/v1/jwks` in {where} as jwks, and in every other "
                f"copy of it, then apply what reads them")
+        path = Path(ctx.root) / file
+        read = read_at(path)
         try:
-            pinned = keys_of(json.loads((Path(ctx.root) / file).read_text(encoding="utf-8")).get("jwks"))
-        except (OSError, ValueError, AttributeError):
-            return Result("drift", f"{file} is not a JSON object with the cluster's jwks", fixable=False, fix=fix)
+            pinned = keys_of(json.loads(path.read_text(encoding="utf-8")).get("jwks"))
+        except OSError:
+            # A file in another repository's clone (the plane's zones repository, say): no clone, no check.
+            return Result("drift", f"{where} could not be read", fixable=False, details=read,
+                          fix=f"see that {owner + ' is cloned beside this repository' if owner else file + ' is there'}")
+        except (ValueError, AttributeError):
+            return Result("drift", f"{where} is not a JSON object with the cluster's jwks", fixable=False, fix=fix,
+                          details=read)
+        result = self._against_cluster(ctx, file, where, fix, pinned, need.params.get("keys"))
+        result.details[:0] = read
+        return result
+
+    def _against_cluster(self, ctx: Context, file: str, where: str, fix: str, pinned: dict, wanted: Any) -> Result:
         if ctx.channel == "deploy":
             # The server's read-only verb takes get with its own flags, and --raw is not one.
             return Result("unknown", "the cluster's signing keys are read over the admin channel or from the plane",
@@ -385,20 +400,35 @@ class Jwks(Base):
         except (ValueError, AttributeError):
             return Result("unknown", "the cluster's /openid/v1/jwks is not a JSON key set",
                           fix="see what kubectl get --raw /openid/v1/jwks gives")
-        wanted = need.params.get("keys")
         if live == pinned and wanted is not None and len(live) < wanted:
             # One key short of the pair: a lost key would have no fallback to take over.
             return Result("drift", f"the cluster publishes {len(live)} signing key{'s' * (len(live) != 1)}, "
                                    f"not the {wanted} the need asks for", fixable=False,
                           fix="give the cluster its second signing key: shared-infra's scripts/go-live-signing-keys.sh")
         if live == pinned:
-            return Result("ready", f"{file} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
+            return Result("ready", f"{where} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
         details = [f"the cluster signs with {kid}, which {file} does not pin" for kid in sorted(set(live) - set(pinned))]
         details += [f"{file} pins {kid}, which the cluster no longer has" for kid in sorted(set(pinned) - set(live))]
         details += [f"{kid} differs between {file} and the cluster" for kid in sorted(set(live) & set(pinned))
                     if live[kid] != pinned[kid]]
         return Result("drift", f"{file} does not pin the cluster's signing keys", details=details,
                       fixable=False, fix=fix)
+
+
+def read_at(path: Path) -> list[str]:
+    """Which commit of which clone the pinned file was read at, as a detail; none outside git."""
+    import subprocess  # noqa: PLC0415
+    try:
+        ran = subprocess.run(["git", "-C", str(path.parent), "log", "-1", "--format=%h %cI", "--", path.name],
+                             capture_output=True, text=True, timeout=10, check=False)
+        top = subprocess.run(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"],
+                             capture_output=True, text=True, timeout=10, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if ran.returncode != 0 or top.returncode != 0 or not ran.stdout.strip():
+        return []
+    commit, when = ran.stdout.split()
+    return [f"read from {Path(top.stdout.strip()).name}'s clone, where {path.name} was last changed in {commit} ({when})"]
 
 
 def keys_of(jwks: Any) -> dict[str, dict[str, Any]]:

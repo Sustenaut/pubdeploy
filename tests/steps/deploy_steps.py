@@ -518,8 +518,20 @@ def cluster_signs(world, keys):
     world.cluster["jwks"] = dict(k.strip().split("=") for k in keys.split(","))
 
 
+@given(parsers.parse('the file "{path}" is committed'))
+def committed(world, path):
+    import subprocess  # noqa: PLC0415
+    run = lambda *a: subprocess.run(["git", "-C", str(world.root), *a], check=True, capture_output=True)  # noqa: E731
+    if not (world.root / ".git").exists():
+        run("init", "-q")
+    run("add", path)
+    run("-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false",
+        "commit", "-q", "-m", "pin", "--", path)
+
+
 @given(parsers.parse('the file "{path}" holds "{text}"'))
 def file_holds(world, path, text):
+    (world.root / path).parent.mkdir(parents=True, exist_ok=True)
     (world.root / path).write_text(text + "\n")
 
 
