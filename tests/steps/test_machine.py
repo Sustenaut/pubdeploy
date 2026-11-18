@@ -4,6 +4,7 @@ example service. The shared deploy steps are deploy_steps.py's."""
 
 from __future__ import annotations
 
+import fcntl
 import json
 import re
 import shutil
@@ -163,11 +164,20 @@ SCRIPTS = {
 
 
 @pytest.fixture(scope="session")
-def xstate_installed():
-    if not (XSTATE / "node_modules" / "xstate").is_dir():
-        npm = shutil.which("npm")
-        assert npm, "npm is not installed: the XState scenarios need Node"
-        subprocess.run([npm, "ci", "--silent", "--no-audit", "--no-fund"], cwd=XSTATE, check=True)
+def xstate_installed(tmp_path_factory):
+    """tests/xstate's node_modules, installed once: under pytest-xdist each worker has this
+    session fixture, and npm ci from several at once races on node_modules (exit 254), so
+    the first worker to hold the lock installs and the others wait, then reuse it. The
+    marker is written only once npm ci has finished, so a broken install is made again."""
+    marker = XSTATE / "node_modules" / ".installed-by-tests"
+    lock = tmp_path_factory.getbasetemp().parent / "xstate-npm-ci.lock"  # one dir for every worker
+    with lock.open("w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        if not marker.is_file() or marker.read_text() != (XSTATE / "package-lock.json").read_text():
+            npm = shutil.which("npm")
+            assert npm, "npm is not installed: the XState scenarios need Node"
+            subprocess.run([npm, "ci", "--no-audit", "--no-fund"], cwd=XSTATE, check=True)
+            marker.write_text((XSTATE / "package-lock.json").read_text())
     return XSTATE
 
 
