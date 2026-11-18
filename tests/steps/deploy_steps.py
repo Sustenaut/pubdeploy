@@ -518,8 +518,46 @@ def cluster_signs(world, keys):
     world.cluster["jwks"] = dict(k.strip().split("=") for k in keys.split(","))
 
 
+@given(parsers.parse('the file "{path}" is committed'))
+def committed(world, path):
+    import subprocess  # noqa: PLC0415
+    run = lambda *a: subprocess.run(["git", "-C", str(world.root), *a], check=True, capture_output=True)  # noqa: E731
+    if not (world.root / ".git").exists():
+        run("init", "-q")
+    run("add", path)
+    run("-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false",
+        "commit", "-q", "-m", "pin", "--", path)
+
+
+@given(parsers.parse('the file "{path}" was committed {days:d} days ago'))
+def committed_long_ago(world, path, days):
+    import os  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+    import time  # noqa: PLC0415
+    when = f"{int(time.time()) - days * 86400} +0000"
+    env = {**os.environ, "GIT_AUTHOR_DATE": when, "GIT_COMMITTER_DATE": when}
+    run = lambda *a: subprocess.run(["git", "-C", str(world.root), *a], check=True, capture_output=True,  # noqa: E731
+                                    env=env)
+    if not (world.root / ".git").exists():
+        run("init", "-q")
+    run("add", path)
+    run("-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false",
+        "commit", "-q", "-m", "pin", "--", path)
+
+
+@given(parsers.parse("the clone was last fetched {hours:d} hours ago"))
+def fetched_ago(world, hours):
+    import os  # noqa: PLC0415
+    import time  # noqa: PLC0415
+    fetch_head = world.root / ".git" / "FETCH_HEAD"
+    fetch_head.write_text("")
+    then = time.time() - hours * 3600
+    os.utime(fetch_head, (then, then))
+
+
 @given(parsers.parse('the file "{path}" holds "{text}"'))
 def file_holds(world, path, text):
+    (world.root / path).parent.mkdir(parents=True, exist_ok=True)
     (world.root / path).write_text(text + "\n")
 
 

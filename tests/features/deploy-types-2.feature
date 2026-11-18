@@ -209,8 +209,40 @@ Feature: The need types phase 2 adds: a service account key, a sign-in client, a
 
   Scenario: A pinned file that is not a key set is drift
     Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}
+    And the file "infra/k8s-jwks.json" holds "{}"
     When I run pubdeploy "walk"
     Then "k8s.jwks:k8s-jwks" is drift, "is not a JSON object with the cluster's jwks"
+
+  Scenario: A pinned file in another repository's clone that is not there fails closed, naming that repository
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "../shared-infra/infra/k8s-jwks.json", "repository": "example-org/shared-infra", "keys": 2}
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is drift, "example-org/shared-infra's k8s-jwks.json could not be read"
+    And it prints "see that example-org/shared-infra is cloned beside this repository"
+
+  Scenario: The commit the pinned file was read at is said
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "repository": "example-org/shared-infra"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the file "infra/k8s-jwks.json" is committed
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is ready, "example-org/shared-infra's k8s-jwks.json pins the cluster's 1 signing key"
+    And it prints "read from repo's clone at"
+    And it prints "k8s-jwks.json was last changed in"
+
+  Scenario: A fresh clone of an old repository is not stale
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "repository": "example-org/shared-infra"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the file "infra/k8s-jwks.json" was committed 30 days ago
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is ready, "pins the cluster's 1 signing key"
+
+  Scenario: A clone of the file's repository fetched over a day ago is unknown, as the pin may have moved
+    Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json", "repository": "example-org/shared-infra"}
+    And the file "infra/k8s-jwks.json" pins the keys key-a=n-a
+    And the file "infra/k8s-jwks.json" is committed
+    And the clone was last fetched 30 hours ago
+    When I run pubdeploy "walk"
+    Then "k8s.jwks:k8s-jwks" is unknown, "example-org/shared-infra's clone was last fetched 30 h ago; the pin may have moved"
+    And it prints "refresh the clone of example-org/shared-infra"
 
   Scenario: A cluster answer that is not a key set is unknown
     Given the deploy block also needs {"type": "k8s.jwks", "file": "infra/k8s-jwks.json"}

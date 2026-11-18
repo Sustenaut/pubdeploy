@@ -342,6 +342,10 @@ class CronJob(Base):
         return run_job(ctx, need.name, self.fulfil_budget)
 
 
+# A clone of the file's repository older than this may hold a pin that has since moved.
+STALE_HOURS = 24
+
+
 class Jwks(Base):
     """A file that pins the cluster's service-account signing keys is the
     cluster's: each key `kubectl get --raw /openid/v1/jwks` gives, and no other;
@@ -357,7 +361,9 @@ class Jwks(Base):
     schema = schema({"file": {"type": "string", "minLength": 1,
                               "x-phrase": "must be the pinned file's path, from the repository's root"},
                      "keys": {"type": "integer", "minimum": 1, "maximum": 10,
-                              "x-phrase": "must be how many signing keys the cluster publishes, 1 to 10"}},
+                              "x-phrase": "must be how many signing keys the cluster publishes, 1 to 10"},
+                     "repository": {"type": "string", "pattern": r"^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$",
+                                    "x-phrase": "must be the OWNER/NAME of the repository the file is in"}},
                     ("file",))
 
     def default_name(self, params: dict[str, Any]) -> str | None:
@@ -366,13 +372,30 @@ class Jwks(Base):
 
     def check(self, need: Need, ctx: Context) -> Result:
         import json  # noqa: PLC0415
-        file = need.params["file"]
-        fix = (f"put the output of `kubectl get --raw /openid/v1/jwks` in {file} as jwks, and in every other "
+        file, owner = need.params["file"], need.params.get("repository")
+        where = f"{owner}'s {Path(file).name}" if owner else file
+        fix = (f"put the output of `kubectl get --raw /openid/v1/jwks` in {where} as jwks, and in every other "
                f"copy of it, then apply what reads them")
+        path = Path(ctx.root) / file
+        read = read_at(path)
         try:
-            pinned = keys_of(json.loads((Path(ctx.root) / file).read_text(encoding="utf-8")).get("jwks"))
-        except (OSError, ValueError, AttributeError):
-            return Result("drift", f"{file} is not a JSON object with the cluster's jwks", fixable=False, fix=fix)
+            pinned = keys_of(json.loads(path.read_text(encoding="utf-8")).get("jwks"))
+        except OSError:
+            # A file in another repository's clone (the plane's zones repository, say): no clone, no check.
+            return Result("drift", f"{where} could not be read", fixable=False, details=read,
+                          fix=f"see that {owner + ' is cloned beside this repository' if owner else file + ' is there'}")
+        except (ValueError, AttributeError):
+            return Result("drift", f"{where} is not a JSON object with the cluster's jwks", fixable=False, fix=fix,
+                          details=read)
+        age = fetched_hours(path) if owner else None
+        if age is not None and age > STALE_HOURS:
+            return Result("unknown", f"{owner}'s clone was last fetched {age:.0f} h ago; the pin may have moved",
+                          details=read, fix=f"refresh the clone of {owner}")
+        result = self._against_cluster(ctx, file, where, fix, pinned, need.params.get("keys"))
+        result.details[:0] = read
+        return result
+
+    def _against_cluster(self, ctx: Context, file: str, where: str, fix: str, pinned: dict, wanted: Any) -> Result:
         if ctx.channel == "deploy":
             # The server's read-only verb takes get with its own flags, and --raw is not one.
             return Result("unknown", "the cluster's signing keys are read over the admin channel or from the plane",
@@ -385,20 +408,64 @@ class Jwks(Base):
         except (ValueError, AttributeError):
             return Result("unknown", "the cluster's /openid/v1/jwks is not a JSON key set",
                           fix="see what kubectl get --raw /openid/v1/jwks gives")
-        wanted = need.params.get("keys")
         if live == pinned and wanted is not None and len(live) < wanted:
             # One key short of the pair: a lost key would have no fallback to take over.
             return Result("drift", f"the cluster publishes {len(live)} signing key{'s' * (len(live) != 1)}, "
                                    f"not the {wanted} the need asks for", fixable=False,
                           fix="give the cluster its second signing key: shared-infra's scripts/go-live-signing-keys.sh")
         if live == pinned:
-            return Result("ready", f"{file} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
+            return Result("ready", f"{where} pins the cluster's {len(live)} signing key{'s' * (len(live) != 1)}")
         details = [f"the cluster signs with {kid}, which {file} does not pin" for kid in sorted(set(live) - set(pinned))]
         details += [f"{file} pins {kid}, which the cluster no longer has" for kid in sorted(set(pinned) - set(live))]
         details += [f"{kid} differs between {file} and the cluster" for kid in sorted(set(live) & set(pinned))
                     if live[kid] != pinned[kid]]
         return Result("drift", f"{file} does not pin the cluster's signing keys", details=details,
                       fixable=False, fix=fix)
+
+
+def read_at(path: Path) -> list[str]:
+    """Which commit of which clone the pinned file was read at, as a detail; none outside git."""
+    import subprocess  # noqa: PLC0415
+
+    def git(*args: str) -> str:
+        ran = subprocess.run(["git", "-C", str(path.parent), *args], capture_output=True, text=True,
+                             timeout=10, check=False)
+        return ran.stdout.strip() if ran.returncode == 0 else ""
+    try:
+        top, head = git("rev-parse", "--show-toplevel"), git("log", "-1", "--format=%h %cI")
+        shallow = git("rev-parse", "--is-shallow-repository") == "true"
+        changed = "" if shallow else git("log", "-1", "--format=%h %cI", "--", path.name)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if not top or not head:
+        return []
+    name, (commit, when) = Path(top).name, head.split()
+    # A shallow clone (the engine's are depth 1) knows its tip alone: the file's own commit is unknown.
+    said = f"read from {name}'s clone at {commit} ({when})"
+    if changed:
+        said += f", where {path.name} was last changed in {changed.split()[0]} ({changed.split()[1]})"
+    return [said]
+
+
+def fetched_hours(path: Path) -> float | None:
+    """How long ago the clone the file sits in was last fetched or made (FETCH_HEAD's time, else
+    HEAD's), in hours; None outside git."""
+    import subprocess  # noqa: PLC0415
+    import time  # noqa: PLC0415
+    try:
+        ran = subprocess.run(["git", "-C", str(path.parent), "rev-parse", "--git-dir"], capture_output=True,
+                             text=True, timeout=10, check=False)
+        if ran.returncode != 0:
+            return None
+        git_dir = Path(ran.stdout.strip())
+        git_dir = git_dir if git_dir.is_absolute() else path.parent / git_dir
+        # A fetch writes FETCH_HEAD; a clone writes none, but it, like a checkout, writes HEAD.
+        for name in ("FETCH_HEAD", "HEAD"):
+            if (git_dir / name).is_file():
+                return (time.time() - (git_dir / name).stat().st_mtime) / 3600
+        return None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
 
 
 def keys_of(jwks: Any) -> dict[str, dict[str, Any]]:
