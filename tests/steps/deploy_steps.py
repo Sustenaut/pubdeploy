@@ -529,6 +529,16 @@ def committed(world, path):
         "commit", "-q", "-m", "pin", "--", path)
 
 
+@given(parsers.parse("the clone was last fetched {hours:d} hours ago"))
+def fetched_ago(world, hours):
+    import os  # noqa: PLC0415
+    import time  # noqa: PLC0415
+    fetch_head = world.root / ".git" / "FETCH_HEAD"
+    fetch_head.write_text("")
+    then = time.time() - hours * 3600
+    os.utime(fetch_head, (then, then))
+
+
 @given(parsers.parse('the file "{path}" holds "{text}"'))
 def file_holds(world, path, text):
     (world.root / path).parent.mkdir(parents=True, exist_ok=True)
