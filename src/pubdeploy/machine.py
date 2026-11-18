@@ -16,8 +16,8 @@ parallel state, `running`, with a region per need. A region's states:
              --checked.K [is_unknown]--> unknown          (final: what the walk could not judge)
              --checked.K--> blocked                       (final)
              --error.K--> failed                          (final)
-    found    final in mode check, and for a human need in any mode;
-             in mode fulfil --approved.K--> fulfilling
+    found    final in mode check, and for a need of grade propose, human or none;
+             for an auto need in mode fulfil --approved.K--> fulfilling
     fulfilling --fulfilled.K [is_ok]--> checking          (a fulfil ends with a re-check)
                --fulfilled.K--> failed
                --error.K--> failed
@@ -73,9 +73,17 @@ def key_of(need_id: str, taken: set[str]) -> str:
     return out
 
 
+def fulfils_need(meta: Mapping[str, Any]) -> bool:
+    """Whether a need found missing or drifted goes on to fulfilling: in mode fulfil, and of
+    grade auto, the one grade a walk acts on. A propose need's fulfil only gives its proposal
+    as the fix and changes nothing; a human or none need is a person's to act on. Those end at
+    found, as every need does in mode check."""
+    return meta.get("mode") == "fulfil" and meta.get("grade") == "auto"
+
+
 def region(key: str, meta: dict[str, Any]) -> dict[str, Any]:
     """One need's states, as the module says."""
-    fulfils = meta["mode"] == "fulfil" and meta["grade"] != "human"
+    fulfils = fulfils_need(meta)
     stop = {"stop": {"target": "stopped"}}
     found: dict[str, Any] = {"type": "final"}
     if fulfils:
@@ -267,10 +275,10 @@ def validate(machine: Any) -> list[str]:
             for event, on in (state.get("on") or {}).items():
                 out += [f"{key}.{name}: {event} goes to {t}, which is no state of {key}" for t in targets(on)
                         if t not in states]
-        if meta.get("grade") == "human" and "fulfilling" in {t for s in states.values()
+        if not fulfils_need(meta) and "fulfilling" in {t for s in states.values()
                                                               for on in (s.get("on") or {}).values()
                                                               for t in targets(on)}:
-            out.append(f"{key}: a human need never enters fulfilling")
+            out.append(f"{key}: only an auto need in mode fulfil enters fulfilling")
     after = {k: set((p.get("meta") or {}).get("after", [])) for k, p in running["states"].items()}
     if not out and any(reaches(after, a, k) for k, v in after.items() for a in v):
         out.append("the regions' after-edges make needs wait for each other")

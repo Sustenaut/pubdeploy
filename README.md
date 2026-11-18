@@ -370,8 +370,8 @@ guard?}` or a list), `entry`, `exit`, `meta`; guards and actions are names alone
 root's state `running` is parallel, a region per need, keyed by the need's id as a name
 may hold it, with the need in its `meta` (id, type, grade, mode, the keys it is after, its
 seconds, and how a Stop treats it). A region goes waiting, checking, then ready, found
-(missing or drift), unknown (what the walk could not judge), blocked or failed; in mode fulfil a found need,
-unless its grade is human, goes on `approved` to fulfilling, which ends in a re-check;
+(missing or drift), unknown (what the walk could not judge), blocked or failed; in mode fulfil a found need
+of grade auto (the one grade a walk acts on) goes on `approved` to fulfilling, which ends in a re-check;
 `predecessor_failed` blocks a waiting need, and `stop` stops any need not final. A runner
 blocks the needs after one that ends unknown, blocked, failed or stopped, and fails a run
 only on a need failed or blocked: a run whose only needs not ready are unknown ends done,

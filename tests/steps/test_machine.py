@@ -53,6 +53,11 @@ def human_and_continue(unit, a, b, warning):
     unit["needs"] = [need(a, grade="human"), need(b, stop="continue", stop_warning=warning)]
 
 
+@given(parsers.parse('the need "{a}" graded "{grade}"'))
+def graded(unit, a, grade):
+    unit["needs"] = [need(a, grade=grade)]
+
+
 @given(parsers.re(r"the run section (?P<text>\{.*\})"))
 def run_section(unit, text):
     unit["section"] = json.loads(text)
@@ -119,6 +124,49 @@ def problem_is(unit, text):
 def never_fulfils(unit, key):
     found = regions(unit)[key]["states"]["found"]
     assert found == {"type": "final"}
+
+
+@then(parsers.parse('the region "{key}" goes from found to fulfilling'))
+def goes_fulfilling(unit, key):
+    assert regions(unit)[key]["states"]["found"]["on"][f"approved.{key}"] == {"target": "fulfilling"}
+
+
+@then(parsers.parse('a machine whose propose need\'s found state goes to fulfilling does not validate, saying "{text}"'))
+def propose_fulfilling_refused(text):
+    compiled_machine = machine.compile([need("k8s.secret:s", grade="propose")], {"schema": 1, "default_mode": "fulfil"})
+    region = compiled_machine["states"]["running"]["states"]["k8s_secret_s"]
+    region["states"]["found"] = {"on": {"approved.k8s_secret_s": {"target": "fulfilling"}}}
+    assert any(text in p for p in machine.validate(compiled_machine)), machine.validate(compiled_machine)
+
+
+@given("a Stop has shortened the walk")
+def shortened(request):
+    from pubdeploy import walk  # noqa: PLC0415
+    walk.SHORTENED.set()
+    request.addfinalizer(walk.SHORTENED.clear)
+
+
+@when("a need's check is run within its budget", target_fixture="stepped")
+def timed_check(unit):
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    from pubdeploy import walk  # noqa: PLC0415
+    ran: list[str] = []
+    kind = SimpleNamespace(budget=5.0, check=lambda need, ctx: ran.append(need.id))
+    result = walk.timed(kind, SimpleNamespace(id="upstream:u", type="upstream"), SimpleNamespace(budget_cap=None))
+    return {"result": result, "ran": ran}
+
+
+@then(parsers.parse('it ends unknown, "{text}"'))
+def ends_unknown(stepped, text):
+    assert stepped["result"].state == "unknown" and text in stepped["result"].summary, stepped["result"]
+
+
+@then("the check never ran")
+def never_ran(stepped):
+    import time  # noqa: PLC0415
+    time.sleep(0.1)
+    assert stepped["ran"] == []
 
 
 @then(parsers.parse('the region "{key}" stops with "{stop}", warning "{warning}"'))

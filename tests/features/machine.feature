@@ -59,6 +59,23 @@ Feature: A unit's needs as a state machine, which the convergence engine runs li
     And the region "k8s_jwks_keys" never enters fulfilling
     And the region "deploy_rollout_r" stops with "continue", warning "the workflow keeps running"
 
+  Scenario Outline: Only an auto need in mode fulfil goes on from found to fulfilling
+    Given the need "k8s.secret:s" graded "<grade>"
+    And every need in mode "fulfil"
+    When the machine is compiled
+    Then it validates
+    And the region "k8s_secret_s" <goes>
+
+    Examples:
+      | grade   | goes                                 |
+      | auto    | goes from found to fulfilling        |
+      | propose | never enters fulfilling              |
+      | human   | never enters fulfilling              |
+      | none    | never enters fulfilling              |
+
+  Scenario: A region of a need that is not auto entering fulfilling is refused
+    Then a machine whose propose need's found state goes to fulfilling does not validate, saying "only an auto need in mode fulfil enters fulfilling"
+
   Scenario: A machine that is not one pubdeploy makes is refused, saying why
     Then a machine whose region goes to a state it lacks, or continues on Stop without a warning, does not validate
 
@@ -148,3 +165,9 @@ Feature: A unit's needs as a state machine, which the convergence engine runs li
     When I run pubdeploy "check" "--json" "--need" "upstream:storage"
     Then the journal says "upstream:storage" ended unknown, "a Stop shortened it"
     And the walk took well under the check's 3 seconds
+
+  Scenario: A step after a Stop shortened the walk never starts
+    Given a Stop has shortened the walk
+    When a need's check is run within its budget
+    Then it ends unknown, "the check was not started: a Stop shortened the walk"
+    And the check never ran
