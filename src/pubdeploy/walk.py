@@ -64,6 +64,9 @@ def timed(kind: NeedType, need: Need, ctx: Context, step: str = "check") -> Resu
             box.append(e)
 
     started = time.monotonic()
+    if SHORTENED.is_set():  # a Stop already shortened the walk: the step never starts
+        return Result("unknown", f"the {step} was not started: a Stop shortened the walk",
+                      fix="walk the need again when it may take its time", seconds=0.0)
     worker = threading.Thread(target=run, name=f"{step} {need.id}", daemon=True)
     worker.start()
     # Waited for in slices, so a Stop that shortens (SIGUSR1: SHORTENED) ends it at once.
