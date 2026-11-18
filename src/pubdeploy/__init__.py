@@ -45,8 +45,10 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
+import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -375,10 +377,13 @@ def run_machine(root: Path, unit: str | None, mode: str | None, modes: dict[str,
         return 2
     needs = machine_needs(plan, loaded.types)
     section = unit_block(config, unit).get("run")
-    if mode:
+    # --mode check makes every need a check; --mode fulfil is only the default, so a need the run
+    # section keeps to a check stays one. --modes, a need's own, is over both.
+    if mode == "check":
         section = {**(section or machine.default_section(needs, mode)), "default_mode": mode}
-        if "needs" in section:
-            section["needs"] = {k: {**v, "mode": mode} for k, v in section["needs"].items()}
+        section["needs"] = {k: {**v, "mode": mode} for k, v in (section.get("needs") or {}).items()}
+    elif mode == "fulfil":
+        section = {**section, "default_mode": mode} if section else machine.default_section(needs, mode)
     try:
         compiled = machine.compile(needs, section, modes)
     except ValueError as e:
@@ -412,6 +417,10 @@ def run_walk(root: Path, offline: bool, as_json: bool, kubectl_command: str | No
               file=sys.stderr)
         return 2
     walks = []
+    from .walk import SHORTENED, shorten  # noqa: PLC0415
+    SHORTENED.clear()
+    if hasattr(signal, "SIGUSR1") and threading.current_thread() is threading.main_thread():
+        signal.signal(signal.SIGUSR1, shorten)  # a live run's Stop for a need that shortens
     for name in [unit] if unit else units:
         try:
             ctx = context(root, config, offline, kubectl_command, zones, namespace, server=server, unit=name)

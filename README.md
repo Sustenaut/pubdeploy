@@ -357,6 +357,8 @@ laptop as well.
 ```
 ./pubdeploy machine --unit example                          # the machine, as XState v5 JSON
 ./pubdeploy machine --unit example --mode check --modes upstream:storage=fulfil
+# --mode check: every need a check; --mode fulfil: only the default, so a need the run
+# section keeps to a check stays one; --modes, a need's own, is over both
 ./with-secrets ./pubdeploy walk --fulfil --yes --need k8s.secret:example-files
 ./pubdeploy check --need upstream:storage --budget-seconds 30
 ```
@@ -368,9 +370,12 @@ guard?}` or a list), `entry`, `exit`, `meta`; guards and actions are names alone
 root's state `running` is parallel, a region per need, keyed by the need's id as a name
 may hold it, with the need in its `meta` (id, type, grade, mode, the keys it is after, its
 seconds, and how a Stop treats it). A region goes waiting, checking, then ready, found
-(missing or drift), blocked (blocked or unknown) or failed; in mode fulfil a found need,
+(missing or drift), unknown (what the walk could not judge), blocked or failed; in mode fulfil a found need,
 unless its grade is human, goes on `approved` to fulfilling, which ends in a re-check;
-`predecessor_failed` blocks a waiting need, and `stop` stops any need not final. Events
+`predecessor_failed` blocks a waiting need, and `stop` stops any need not final. A runner
+blocks the needs after one that ends unknown, blocked, failed or stopped, and fails a run
+only on a need failed or blocked: a run whose only needs not ready are unknown ends done,
+with a note. Events
 carry what the guards read: `checked.KEY` a `state`, `fulfilled.KEY` an `ok`.
 
 **The run section** of the deploy block says how a live run runs the needs, and may only
@@ -398,7 +403,9 @@ when the time left is up: k8s.cronjob, service.health) or `continue` (it runs on
 walk's order and the run's after-edges, are checked, never fulfilled; when one they wait
 for directly is not ready, nothing is done (exit 2, naming it). Only the named needs are
 said, journaled and, with `--fulfil`, fulfilled. `--budget-seconds S` caps every check and
-fulfil at S seconds: what is left of a run's time.
+fulfil at S seconds: what is left of a run's time. A live run's Stop for a need that shortens sends the walk
+`SIGUSR1`: what is running ends at once as unknown ("a Stop shortened it"), and the walk
+prints and journals what it has.
 
 ### Provider contract
 

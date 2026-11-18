@@ -123,3 +123,28 @@ Feature: A unit's needs as a state machine, which the convergence engine runs li
     And the "upstream" check takes 1 second
     When I run pubdeploy "check" "--need" "upstream:storage" "--budget-seconds" "0.2"
     Then "upstream:storage" is unknown, "longer than 0.2 s"
+
+  Scenario: machine --mode fulfil keeps the run section's checks; --mode check makes every need a check; --modes is over both
+    Given the example service
+    And the deploy block's "run" is {"schema": 1, "default_mode": "fulfil", "needs": {"upstream:storage": {"mode": "check"}}}
+    When I run pubdeploy "machine" "--mode" "fulfil"
+    Then it prints a machine with "upstream:storage" in mode "check" and "service.health:example" in mode "fulfil"
+    When I run pubdeploy "machine" "--mode" "check"
+    Then it prints a machine with "upstream:storage" in mode "check" and "service.health:example" in mode "check"
+    When I run pubdeploy "machine" "--mode" "check" "--modes" "service.health:example=fulfil"
+    Then it prints a machine with "upstream:storage" in mode "check" and "service.health:example" in mode "fulfil"
+
+  Scenario: A need its walk could not judge ends unknown, and the runner blocks what is after it
+    Given the needs "k8s.namespace:a", "k8s.secret:s" after "k8s.namespace:a", and "upstream:u"
+    And every need in mode "fulfil"
+    When the script "an unknown blocks its dependant" drives the machine in python-statemachine and in XState v5
+    Then both give the same states after each event
+    And the last states are k8s_namespace_a unknown, k8s_secret_s blocked, upstream_u ready
+
+  Scenario: A Stop that shortens (SIGUSR1) ends the running check as unknown, and the walk keeps its journal
+    Given the example service
+    And the "upstream" check takes 3 second
+    And SIGUSR1 comes 0.4 seconds into the walk
+    When I run pubdeploy "check" "--json" "--need" "upstream:storage"
+    Then the journal says "upstream:storage" ended unknown, "a Stop shortened it"
+    And the walk took well under the check's 3 seconds

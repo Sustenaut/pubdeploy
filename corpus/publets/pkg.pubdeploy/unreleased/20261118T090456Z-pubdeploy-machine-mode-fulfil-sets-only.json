@@ -1,0 +1,4 @@
+{
+  "category": "fixed",
+  "change": "pubdeploy machine --mode fulfil sets only the run section's default_mode and keeps its per-need modes (--mode check still makes every need a check, --modes is over both); a need the walk could not judge ends in a final unknown state (guard is_unknown) instead of blocked; a walk's check or fulfil is waited for in slices, and SIGUSR1 (a live run's Stop that shortens) ends the running one as unknown, keeping the journal"
+}

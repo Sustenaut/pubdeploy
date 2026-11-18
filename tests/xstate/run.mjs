@@ -8,6 +8,7 @@ const script = JSON.parse(readFileSync(process.argv[3], "utf8"));
 const guards = {
   is_ready: ({ event }) => event.state === "ready",
   is_found: ({ event }) => event.state === "missing" || event.state === "drift",
+  is_unknown: ({ event }) => event.state === "unknown",
   is_ok: ({ event }) => event.ok === true,
 };
 const actor = createActor(createMachine(machine).provide({ guards }));

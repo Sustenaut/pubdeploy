@@ -31,6 +31,14 @@ from .model import FULFIL_BUDGET, STATES, Context, Journal, Need, NeedType, Resu
 from .order import edges, topological
 
 ACTING = ("missing", "drift", "blocked")
+SLICE = 0.2  # seconds a check or a fulfil is waited for at a time
+# Set by SIGUSR1, a live run's Stop for a need that shortens (shorten()): what is still
+# running ends now, as unknown, and the walk prints and journals what it has.
+SHORTENED = threading.Event()
+
+
+def shorten(_signum: int = 0, _frame: object = None) -> None:
+    SHORTENED.set()
 # What a fulfil may need of its context, and the fix when the context lacks it.
 LACKS = {"server": "needs the admin channel (--server HOST), the one that runs commands on the server",
          "kubectl-write": "needs the admin channel or the plane",
@@ -58,9 +66,14 @@ def timed(kind: NeedType, need: Need, ctx: Context, step: str = "check") -> Resu
     started = time.monotonic()
     worker = threading.Thread(target=run, name=f"{step} {need.id}", daemon=True)
     worker.start()
-    worker.join(budget)
+    # Waited for in slices, so a Stop that shortens (SIGUSR1: SHORTENED) ends it at once.
+    while worker.is_alive() and not SHORTENED.is_set() and time.monotonic() - started < budget:
+        worker.join(min(SLICE, max(0.0, budget - (time.monotonic() - started))))
     seconds = time.monotonic() - started
-    if not box:
+    if not box and SHORTENED.is_set():
+        result = Result("unknown", f"the {step} was ended after {seconds:.1f} s: a Stop shortened it",
+                        fix="walk the need again when it may take its time")
+    elif not box:
         result = Result("unknown", f"the {step} took longer than {budget:g} s, and was left",
                         fix=f"run it again; if it is always slow, see what {need.type} waits on")
     elif isinstance(box[0], BaseException):
