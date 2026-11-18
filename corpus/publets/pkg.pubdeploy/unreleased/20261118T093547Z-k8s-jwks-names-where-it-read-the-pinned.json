@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "k8s.jwks names where it read the pinned file: the commit of the clone it sits in, in the details; with repository (OWNER/NAME), its fixes name that repository, and a file in another repository's clone that is not there is drift, saying to clone it"
-}
