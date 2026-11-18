@@ -151,6 +151,10 @@ SCRIPTS = {
         {"type": "checked.k8s_namespace_a", "state": "missing"}, {"type": "checked.upstream_u", "state": "ready"},
         {"type": "approved.k8s_namespace_a"}, {"type": "fulfilled.k8s_namespace_a", "ok": False},
         {"type": "predecessor_failed.k8s_secret_s"}],
+    "an unknown blocks its dependant": [
+        {"type": "start.k8s_namespace_a"}, {"type": "start.upstream_u"},
+        {"type": "checked.k8s_namespace_a", "state": "unknown"}, {"type": "checked.upstream_u", "state": "ready"},
+        {"type": "predecessor_failed.k8s_secret_s"}],
     "Stop in the middle": [
         {"type": "start.k8s_namespace_a"}, {"type": "start.upstream_u"},
         {"type": "checked.upstream_u", "state": "ready"}, {"type": "checked.k8s_namespace_a", "state": "drift"},
@@ -233,3 +237,24 @@ def slow(monkeypatch, kind, seconds):
         time.sleep(seconds)
         return check(need, ctx)
     monkeypatch.setattr(t, "check", slowly)
+
+
+@given(parsers.parse("SIGUSR1 comes {seconds:g} seconds into the walk"))
+def sigusr1_later(seconds):
+    import os  # noqa: PLC0415
+    import signal  # noqa: PLC0415
+    import threading  # noqa: PLC0415
+    timer = threading.Timer(seconds, lambda: os.kill(os.getpid(), signal.SIGUSR1))
+    timer.daemon = True
+    timer.start()
+
+
+@then(parsers.parse('the journal says "{need_id}" ended {state}, "{text}"'))
+def journaled(world, need_id, state, text):
+    (found,) = [n for n in world.journal["needs"] if n["id"] == need_id]
+    assert found["state"] == state and text in found["summary"], found
+
+
+@then(parsers.parse("the walk took well under the check's {seconds:g} seconds"))
+def quick(world, seconds):
+    assert world.journal["walk"]["seconds"] < seconds - 1, world.journal["walk"]

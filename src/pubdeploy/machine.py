@@ -13,7 +13,8 @@ parallel state, `running`, with a region per need. A region's states:
     waiting --start.K--> checking
     checking --checked.K [is_ready]--> ready              (final)
              --checked.K [is_found]--> found              (missing or drift)
-             --checked.K--> blocked                       (blocked or unknown: final)
+             --checked.K [is_unknown]--> unknown          (final: what the walk could not judge)
+             --checked.K--> blocked                       (final)
              --error.K--> failed                          (final)
     found    final in mode check, and for a human need in any mode;
              in mode fulfil --approved.K--> fulfilling
@@ -28,6 +29,10 @@ name cannot hold as `_`, made unique. The need itself is in the region's meta:
 its id, type, grade, mode, the needs it is after (keys), its seconds budget, and
 how a Stop treats it (`stop`: signal, shorten or continue, and `stop_warning`).
 Events carry what the guards read: `checked` a `state`, `fulfilled` an `ok`.
+
+A runner blocks the needs after one that ends unknown, blocked, failed or stopped
+(`predecessor_failed`), and fails a run only on a need failed or blocked: a run whose only
+needs not ready are unknown ends done, with a note.
 
 What runs, and in which order, is the deploy block's `run` section's, or the
 default generated from the needs (`compile`): every need in `default_mode`, the
@@ -50,7 +55,7 @@ STOPS = ("signal", "shorten", "continue")
 PARALLEL = 4
 SECTION_KEYS = ("schema", "default_mode", "parallel", "needs")
 NEED_KEYS = ("mode", "after")
-FINAL = ("ready", "found", "blocked", "failed", "stopped")
+FINAL = ("ready", "found", "unknown", "blocked", "failed", "stopped")
 # A transformer per schema change: TRANSFORMERS[n] turns a version n section into n + 1.
 TRANSFORMERS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {}
 UNSAFE = re.compile(r"[^A-Za-z0-9_]")
@@ -83,6 +88,7 @@ def region(key: str, meta: dict[str, Any]) -> dict[str, Any]:
                                f"predecessor_failed.{key}": {"target": "blocked"}, **stop}},
             "checking": {"on": {f"checked.{key}": [{"target": "ready", "guard": "is_ready"},
                                                    {"target": "found", "guard": "is_found"},
+                                                   {"target": "unknown", "guard": "is_unknown"},
                                                    {"target": "blocked"}],
                                 f"error.{key}": {"target": "failed"}, **stop}},
             "found": found,
@@ -90,6 +96,7 @@ def region(key: str, meta: dict[str, Any]) -> dict[str, Any]:
                                                        {"target": "failed"}],
                                   f"error.{key}": {"target": "failed"}, **stop}},
             "ready": {"type": "final"},
+            "unknown": {"type": "final"},
             "blocked": {"type": "final"},
             "failed": {"type": "final"},
             "stopped": {"type": "final"},
@@ -287,6 +294,9 @@ class Guards:
 
     def is_found(self, need_state: str | None = None, **_: Any) -> bool:
         return need_state in ("missing", "drift")
+
+    def is_unknown(self, need_state: str | None = None, **_: Any) -> bool:
+        return need_state == "unknown"
 
     def is_ok(self, ok: bool | None = None, **_: Any) -> bool:
         return ok is True
