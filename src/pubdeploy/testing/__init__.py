@@ -14,7 +14,8 @@ asks either way:
 Its steps are pubtest's voice (pubtest's GRAMMAR.md), and need pubtest's
 plugin, which every suite on pubtest loads. A step that runs pubrules
 (`the example service's managed files are in step`) needs pubrules
-installed, and the world patches pubsec's hooks only where pubsec is.
+installed. The world patches only pubdeploy: a suite whose packages the walk
+also loads (pubsec's types) patches them in its own World's `patch`.
 
 What it gives (`steps.py`):
 
@@ -57,8 +58,8 @@ conftest.py:
 The hooks are `secrets_project` (the variable ./with-secrets names its
 project in), `sample()` (the service copied), `__init__` (more state),
 `gcloud_answer(args)` (gcloud's answers; `run_gcloud` keeps the call
-first), `patch(monkeypatch)` and `patch_pubsec(monkeypatch)` (what the walk
-reaches), `context(...)` (the walk's Context) and `leaked()` (what the canary
+first), `patch(monkeypatch)` (what the walk reaches; a subclass patches its own
+packages after calling it), `context(...)` (the walk's Context) and `leaked()` (what the canary
 reads). A step of the suite's own with a plugin step's text takes precedence
 over it.
 

@@ -236,7 +236,9 @@ class FakeServer:
 
 
 class FakeWriter:
-    """Bitwarden, with the write token: what it was given to write, by name."""
+    """Bitwarden, with the write token: what it was given to write, by name.
+    For a suite whose types write secrets (pubsec's) to put in place of its
+    writer, in its own World's `patch`."""
 
     def __init__(self, world: Any, token: str) -> None:
         self.world, self.token = world, token
@@ -473,9 +475,9 @@ class World:
 
     def patch(self, monkeypatch) -> None:
         """Point what the walk reaches at the fakes, in the copied service's
-        directory: the context, the prompts, the terminal, storage, and,
-        when pubsec is installed, its hooks (`patch_pubsec`)."""
-        import importlib.util  # noqa: PLC0415
+        directory: the context, the prompts, the terminal and storage. A suite
+        whose packages the walk loads (pubsec's types) patches those in its
+        own subclass, after calling this one."""
         monkeypatch.chdir(self.root)
         monkeypatch.setenv("PUBRULES_ANY_VERSION", "1")
 
@@ -487,26 +489,6 @@ class World:
                                                                                             if self.answers else ""))
         monkeypatch.setattr("sys.stdin.isatty", lambda: self.terminal, raising=False)
         monkeypatch.setattr("pubdeploy.store.Heads", lambda base, tenant, token: FakeHeads(self, base, tenant, token))
-        if importlib.util.find_spec("pubsec") is not None:
-            self.patch_pubsec(monkeypatch)
-
-    def patch_pubsec(self, monkeypatch) -> None:
-        """pubsec's types, which hold a secret's value, and its hook that asks
-        for the write token: the walk loads them as in use, by their entry
-        points, with Bitwarden's writer, its generator and gcloud faked."""
-        import pubsec.needs.bitwarden as bitwarden  # noqa: PLC0415
-        import pubsec.walk  # noqa: PLC0415
-        monkeypatch.setattr(pubsec.walk, "_writers", {})
-        monkeypatch.setattr(pubsec.walk, "ask_hidden", lambda prompt: self.outputs.append(prompt) or self.token)
-        monkeypatch.setattr(pubsec.walk, "BitwardenWriter", lambda token, project: FakeWriter(self, token))
-        made = bitwarden.generate
-
-        def generate(shape):
-            value = made(shape)
-            self.values.append(value)
-            return value
-        monkeypatch.setattr(bitwarden, "generate", generate)
-        monkeypatch.setattr("pubsec.needs.gcp.gcloud", self.run_gcloud)
 
     def run_gcloud(self, args: list[str]) -> Ran:
         """gcloud, as the walk runs it: the call kept, then `gcloud_answer`'s answer."""

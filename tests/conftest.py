@@ -2,6 +2,10 @@
 ...`, files, stand-ins) are pubtest's (its GRAMMAR.md); pubtest's pytest
 plugin loads them.
 
+The deploy scenarios run in pubdeploy.testing's world (pytest.ini sets
+pubdeploy_testing). The walk here also loads pubsec's types, so this suite's
+own World patches them: the plugin patches only pubdeploy.
+
 What every steps module shares lives here: the release commit pubdeploy pins
 its workflows by, and the built `pubdeploy` that `Given the program under
 test is "pubdeploy"` runs: the one installed beside the Python running this
@@ -10,12 +14,15 @@ suite, unless PUBDEPLOY_BIN_DIR names another.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
 from pathlib import Path
 
 import pytest
 from pytest_bdd import given, parsers, then
+
+from pubdeploy.testing.world import FakeWriter, World
 
 os.environ.setdefault("PUBDEPLOY_BIN_DIR", str(Path(sys.executable).parent))
 
@@ -55,3 +62,53 @@ def standin_prints_file(ctx, tmp_path, name, path):
     from pubtest.steps.standins import _refresh, standins  # noqa: PLC0415
     standins(ctx, tmp_path).add(name, out=(ctx.directory / path).read_text())
     _refresh(ctx)
+
+
+# --- the deploy world, with pubsec's types patched where pubsec is installed -------------------
+
+
+class SuiteWorld(World):
+    """pubdeploy.testing's world, and pubsec's types and hook, which the walk
+    here loads by their entry points: their writer, generator and gcloud
+    pointed at the world."""
+
+    def patch(self, monkeypatch) -> None:
+        super().patch(monkeypatch)
+        if importlib.util.find_spec("pubsec") is None:
+            return
+        import pubsec.needs.bitwarden as bitwarden  # noqa: PLC0415
+        import pubsec.walk  # noqa: PLC0415
+        monkeypatch.setattr(pubsec.walk, "_writers", {})
+        monkeypatch.setattr(pubsec.walk, "ask_hidden", lambda prompt: self.outputs.append(prompt) or self.token)
+        monkeypatch.setattr(pubsec.walk, "BitwardenWriter", lambda token, project: FakeWriter(self, token))
+        made = bitwarden.generate
+
+        def generate(shape):
+            value = made(shape)
+            self.values.append(value)
+            return value
+        monkeypatch.setattr(bitwarden, "generate", generate)
+        monkeypatch.setattr("pubsec.needs.gcp.gcloud", self.run_gcloud)
+
+
+@pytest.fixture
+def deploy_world_class() -> type[World]:
+    return SuiteWorld
+
+
+@given("PUBSEC_WRITE_TOKEN_FILE names the write token's file")
+def token_file(world, monkeypatch):
+    import pubsec.walk  # noqa: PLC0415
+    world.env["PUBSEC_WRITE_TOKEN_FILE"] = "/var/run/secrets/bitwarden-write/token"
+    world.hook_terminal = []
+
+    def prepare(ctx, plan, terminal):  # as pubsec's, which reads the file without a terminal
+        world.hook_terminal.append(terminal)
+        if not terminal and ctx.env.get("PUBSEC_WRITE_TOKEN_FILE"):
+            ctx.bitwarden_writer = FakeWriter(world, world.token)
+    monkeypatch.setattr(pubsec.walk, "prepare", prepare)
+
+
+@then("the hook was called without a terminal")
+def hook_without_terminal(world):
+    assert world.hook_terminal and not any(world.hook_terminal), world.hook_terminal

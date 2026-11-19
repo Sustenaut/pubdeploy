@@ -23,7 +23,7 @@ from pubdeploy import load
 from pubdeploy.model import Result, Stop
 from pubdeploy.schema import journal_schema, problems, validate
 from pubdeploy.testing import fixture_path
-from pubdeploy.testing.world import CANARY, NOW, FakeWriter, World, key_value, run
+from pubdeploy.testing.world import CANARY, NOW, World, key_value, run
 
 
 def value_of(text: str):
@@ -1136,24 +1136,6 @@ def objects_differ(world):
 def dry_run_refused(world):
     world.cluster["diff_code"] = 2
     world.cluster["diff_err"] = 'Error from server (Forbidden): cannot patch resource "networkpolicies"'
-
-
-@given("PUBSEC_WRITE_TOKEN_FILE names the write token's file")
-def token_file(world, monkeypatch):
-    import pubsec.walk  # noqa: PLC0415
-    world.env["PUBSEC_WRITE_TOKEN_FILE"] = "/var/run/secrets/bitwarden-write/token"
-    world.hook_terminal = []
-
-    def prepare(ctx, plan, terminal):  # as pubsec's, which reads the file without a terminal
-        world.hook_terminal.append(terminal)
-        if not terminal and ctx.env.get("PUBSEC_WRITE_TOKEN_FILE"):
-            ctx.bitwarden_writer = FakeWriter(world, world.token)
-    monkeypatch.setattr(pubsec.walk, "prepare", prepare)
-
-
-@then("the hook was called without a terminal")
-def hook_without_terminal(world):
-    assert world.hook_terminal and not any(world.hook_terminal), world.hook_terminal
 
 
 @given("the cluster's objects were applied client-side")
