@@ -104,16 +104,42 @@ Feature: The canary: no secret value ever reaches what pubdeploy prints
       | over the deploy channel, before secret-keys   | walk --fulfil --yes --json |
 
   Scenario: An exception holding a value is not shown
-    Then an exception holding a value is not shown
+    Given the example service
+    And the secret "canary-7f3e"
+    And a need type "example.leaky" whose check raises, saying "the value is canary-7f3e"
+    When its need "one" is walked
+    Then the result's "needs.0.state" is "unknown"
+    And the result's "needs.0.summary" is "the check failed (ValueError)"
+    And no secret appears in what it produced
 
   Scenario: A value in the rendered manifests is not shown
-    Then a value in the rendered manifests is not shown
+    Given the example service
+    And the secret "canary-7f3e"
+    And the rendered manifests hold the Secret "example-held"
+    When I run pubdeploy "check" "--offline"
+    Then it succeeds
+    And no secret appears in what it produced
 
   Scenario: Every result of the sound fixture is free of values
-    Then every result of the sound fixture is free of values
+    Given the example service
+    And the secret "canary-7f3e"
+    When the example service's needs are walked
+    Then the result's "results" is "["Result"]"
+    And no secret appears in what it produced
 
   Scenario: A fulfil that raises holding a value is not shown
-    Then a fulfil that raises holding a value is not shown
+    Given the example service
+    And the secret "canary-7f3e"
+    And a need type "example.leaky" whose fulfil raises, saying "the value is canary-7f3e"
+    When its need "one" is walked and fulfilled
+    Then the result's "needs.0.state" is "missing"
+    And the result's "needs.0.details.0" is "fulfil failed: the fulfil failed (ValueError); this is a fault in example.leaky's fulfil: report it"
+    And no secret appears in what it produced
 
   Scenario: Generated values stay in the walk
-    Then generated values stay in the walk
+    Given the example service
+    And Bitwarden has no "example-cookie-secret"
+    When I run pubdeploy "walk" "--fulfil" "--yes" "--json"
+    Then it succeeds
+    And Bitwarden was given a value the walk generated for "example-cookie-secret"
+    And no output holds a value

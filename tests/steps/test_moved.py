@@ -6,12 +6,9 @@ contract and the sustenaut.walk hook."""
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import fields
 from pathlib import Path
 from types import SimpleNamespace
-
-import pytest
 
 from deploy_world import FIXTURE
 from pubdeploy import prepare, providers
@@ -19,142 +16,99 @@ from pubdeploy.model import Context, Need
 from pubdeploy.registry import BUILTIN, lacking, types
 from pubdeploy.schema import need_problems
 from pubdeploy.units import retrigger, trigger_problems
-from pytest_bdd import scenarios, then
+from pytest_bdd import given, parsers, scenarios, when
 
 scenarios("moved.feature")
 
 ROOT = Path(__file__).resolve().parents[2]
-WHEEL = "https://github.com/example-org/example-needs/releases/download/v1.0.0/example_needs-1.0.0-py3-none-any.whl"
-PUSHED = """name: deploy
-on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}
-permissions:
-  contents: read
-  packages: write
-jobs:
-  deploy:
-    uses: example-org/pubdeploy/.github/workflows/k8s-deploy.yml@v0.1.0
-    with:
-      image: ghcr.io/example-org/example
-      deploys: |
-        k8s example
-    secrets: inherit
-"""
+WHEEL = "https://github.com/{repo}/releases/download/v{version}/{dist}-{version}-py3-none-any.whl"
 
 
-@then("bump moves a provider to its latest release")
-def bump_moves_a_provider_to_its_latest_release(tmp_path):
-    newer = WHEEL.replace("1.0.0", "1.1.0")
-    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
-        {"distribution": "example-needs", "wheel": WHEEL, "sha256": "0" * 64}]}}, indent=2))
+@given(parsers.parse('the latest release of "{repo}" offers its wheel {version}, of the digest "{digest}"'))
+def latest_release(ctx, repo, version, digest):
+    dist = repo.split("/")[1].replace("-", "_")
+    wheel = WHEEL.format(repo=repo, version=version, dist=dist)
 
     def gh(method, path, body):
-        assert (method, path) == ("GET", "repos/example-org/example-needs/releases/latest")
-        return {"assets": [{"name": "example_needs-1.1.0.tar.gz", "browser_download_url": "x"},
-                           {"name": "example_needs-1.1.0-py3-none-any.whl", "browser_download_url": newer,
-                            "digest": "sha256:" + "1" * 64}]}
-    assert providers.bump(tmp_path, gh) == ["updated  pubrules.json (deploy.providers example-needs: 1.1.0)"]
-    given = json.loads((tmp_path / "pubrules.json").read_text())["deploy"]["providers"][0]
-    assert given == {"distribution": "example-needs", "wheel": newer, "sha256": "1" * 64}
-    assert providers.bump(tmp_path, lambda *_: {"assets": [{"name": "example_needs-1.1.0-py3-none-any.whl",
-                                                           "browser_download_url": newer, "digest": "sha256:1"}]}) == []
+        assert (method, path) == ("GET", f"repos/{repo}/releases/latest"), (method, path)
+        return {"assets": [{"name": f"{dist}-{version}.tar.gz", "browser_download_url": "x"},
+                           {"name": wheel.rsplit("/", 1)[1], "browser_download_url": wheel, "digest": digest}]}
+    ctx.gh = gh
 
 
-@then("bump leaves a provider without a sha256 saying so")
-def bump_leaves_a_provider_without_a_sha256_saying_so(tmp_path):
-    (tmp_path / "pubrules.json").write_text(json.dumps({"kind": "service", "deploy": {"namespace": "example", "providers": [
-        {"distribution": "example-needs", "wheel": WHEEL}]}}, indent=2))
-    before = (tmp_path / "pubrules.json").read_text()
-    lines = providers.bump(tmp_path, lambda *_: (_ for _ in ()).throw(AssertionError("no release is read")))
-    assert lines == ["left     deploy.providers example-needs: it has no sha256 to move; give it the wheel's sha256"]
-    assert (tmp_path / "pubrules.json").read_text() == before
+@given("GitHub may be asked nothing")
+def asks_nothing(ctx):
+    def gh(*_):
+        raise AssertionError("no release is read")
+    ctx.gh = gh
 
 
-@then("a type no installed package offers names the providers")
-def a_type_no_installed_package_offers_names_the_providers():
-    assert need_problems({"type": "example.database"}, 0, types(), FIXTURE, ["example-needs"]) == [
-        "deploy: needs[0]: example.database is no type of need pubdeploy or an installed package offers; it would "
-        "be example-needs's, of deploy.providers, which ./pubdeploy runs with: run ./pubdeploy, or install "
-        "example-needs"]
+@when("the providers are bumped")
+def bumped(ctx):
+    ctx.attempt(lambda: providers.bump(ctx.directory, ctx.gh))
 
 
-@then("the trigger rewrite satisfies the check")
-def the_trigger_rewrite_satisfies_the_check():
-    assert trigger_problems(PUSHED, "deploy.yml")
-    rewritten = retrigger(PUSHED)
-    assert trigger_problems(rewritten, "deploy.yml") == []
-    assert "push:" not in rewritten and "branches: [main]\n  workflow_dispatch" not in rewritten
-    assert rewritten.count("workflow_dispatch") == 1 and "  actions: read\n  contents: read\n" in rewritten
+@when(parsers.re(r'the need (?P<need>\{.*\}) is checked against the installed types, with the providers "(?P<dist>[^"]+)"$'))
+def checked_installed(ctx, need, dist):
+    ctx.attempt(lambda: need_problems(json.loads(need), 0, types(), FIXTURE, [dist]))
 
 
-@then("the trigger rewrite adds workflow dispatch")
-def the_trigger_rewrite_adds_workflow_dispatch():
-    rewritten = retrigger(PUSHED.replace("  workflow_dispatch: {}\n", ""))
-    assert "  workflow_dispatch: {}\n" in rewritten and trigger_problems(rewritten, "deploy.yml") == [], rewritten
-
-
-@then("the trigger rewrite takes the short forms")
-def the_trigger_rewrite_takes_the_short_forms():
-    """Every case of the parametrized test this was, in turn."""
-    for text in [
-    "on: push\npermissions: { contents: read }\njobs: {}\n",
-    "on: [push, workflow_dispatch]\njobs: {}\n",
-]:
-        text = text.values[0] if type(text).__name__ == "ParameterSet" else text
-        _case_the_trigger_rewrite_takes_the_short_forms(text=text)
-
-
-def _case_the_trigger_rewrite_takes_the_short_forms(text):
-    rewritten = retrigger(text.replace("jobs: {}", "jobs:\n  d:\n    uses: example-org/pubdeploy/.github/workflows/"
-                                                   "k8s-deploy.yml@v0.1.0"))
-    assert trigger_problems(rewritten, "deploy.yml") == [], rewritten
-
-
-@then("without pubsec its types name it")
-def without_pubsec_its_types_name_it():
+@when(parsers.re(r"the need (?P<need>\{.*\}) is checked against pubdeploy's own types$"))
+def checked_own(ctx, need):
     own = {kind.type: kind for kind in BUILTIN}
-    assert need_problems({"type": "bitwarden.secret", "name": "x"}, 0, own, FIXTURE) == [
-        "deploy: needs[0]: bitwarden.secret is pubsec's: list pubsec in deploy.providers, as `pubrules sync` does, "
-        "and run ./pubdeploy, which runs it"]
-    assert lacking([Need("k8s.secret", "x", {}), Need("github.secret", "Y", {})], own) == [
-        "deploy: github.secret, k8s.secret are pubsec's, which is not installed: list pubsec in deploy.providers, "
-        "as `pubrules sync` does, and run ./pubdeploy, which runs it"]
+    ctx.attempt(lambda: need_problems(json.loads(need), 0, own, FIXTURE))
 
 
-# The Context's names a provider may use, which the README lists under
-# "Provider contract": changing one breaks pubsec and pg-backup.
-CONTRACT = {"root", "config", "block", "namespace", "unit", "channel", "kubectl", "server", "gh", "send",
-            "bitwarden_writer", "http_get", "env", "now", "rendered", "offline", "slug", "zones", "resolve",
-            "values", "types", "needs", "results", "sleep", "dispatched"}
+@when(parsers.parse('the needs "{a}" and "{b}" are looked for among pubdeploy\'s own types'))
+def looked_for(ctx, a, b):
+    own = {kind.type: kind for kind in BUILTIN}
+    ctx.attempt(lambda: lacking([Need(*a.split(":"), {}), Need(*b.split(":"), {})], own))
 
 
-@then("the provider contract is on the context")
-def the_provider_contract_is_on_the_context():
-    assert CONTRACT <= {f.name for f in fields(Context)}
+@when(parsers.parse('the trigger of "{path}" is checked'))
+def trigger_checked(ctx, path):
+    ctx.attempt(lambda: trigger_problems((ctx.directory / path).read_text(), path))
 
 
-@then("the readme lists the provider contract")
-def the_readme_lists_the_provider_contract():
-    section = (ROOT / "README.md").read_text().split("### Provider contract", 1)[1].split("\n## ", 1)[0]
-    missing = [name for name in CONTRACT if not re.search(rf"`{name}[`(]", section)]
-    assert not missing, missing
+@when(parsers.parse('the trigger of "{path}" is rewritten'))
+def trigger_rewritten(ctx, path):
+    target = ctx.directory / path
+
+    def rewrite() -> None:
+        target.write_text(retrigger(target.read_text()))
+    ctx.attempt(rewrite)
 
 
-@then("a walk hook that fails is said and the walk goes on")
-def a_walk_hook_that_fails_is_said_and_the_walk_goes_on(capsys):
-    secret = "canary-7f3e"
+@when("the names a context holds are listed")
+def context_names(ctx):
+    ctx.attempt(lambda: sorted(f.name for f in fields(Context)))
 
-    def broken(ctx, plan, terminal):
-        raise ValueError(f"the token is {secret}")
 
-    def says(ctx, plan, terminal):
-        ctx.bitwarden_writer = "a writer"
-        return "a line"
-    points = [SimpleNamespace(name="broken", load=lambda: broken), SimpleNamespace(name="says", load=lambda: says)]
-    ctx = Context.for_tests()
-    prepare(ctx, [], True, points)
-    err = capsys.readouterr().err
-    assert "pubdeploy: deploy: the sustenaut.walk hook broken failed (ValueError)" in err and "a line" in err
-    assert secret not in err and ctx.bitwarden_writer == "a writer"
+@when("the README's provider contract is read")
+def contract_read(ctx):
+    ctx.attempt(lambda: (ROOT / "README.md").read_text().split("### Provider contract", 1)[1].split("\n## ", 1)[0])
+
+
+@given(parsers.parse('a walk hook "{name}" that fails, saying "{message}"'))
+def hook_fails(ctx, name, message):
+    def broken(context, plan, terminal):
+        raise ValueError(message)
+    ctx.hooks = [*getattr(ctx, "hooks", []), SimpleNamespace(name=name, load=lambda: broken)]
+
+
+@given(parsers.parse('a walk hook "{name}" that gives the context the writer "{writer}", saying "{line}"'))
+def hook_says(ctx, name, writer, line):
+    def says(context, plan, terminal):
+        context.bitwarden_writer = writer
+        return line
+    ctx.hooks = [*getattr(ctx, "hooks", []), SimpleNamespace(name=name, load=lambda: says)]
+
+
+@when("the walk is prepared")
+def prepared(ctx):
+    context = Context.for_tests()
+
+    def walk_prepared():
+        prepare(context, [], True, ctx.hooks)
+        return context.bitwarden_writer
+    ctx.attempt(walk_prepared)

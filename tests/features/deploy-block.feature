@@ -77,7 +77,7 @@ Feature: pubrules sync --check checks pubrules.json's deploy block
   Scenario: Without workflow and overlay, deploy.yml and k8s are meant, and must be there
     Given the deploy block's "workflow" is absent
     And the deploy block's "overlay" is absent
-    And the file ".github/workflows/deploy.yml" is gone
+    And the file ".github/workflows/deploy.yml" is removed
     When I check the deploy block
     Then the only problem is "deploy: workflow deploy.yml is not in .github/workflows"
 

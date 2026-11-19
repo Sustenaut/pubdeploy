@@ -209,7 +209,9 @@ def deleted_alone(world, name):
                                                                     "--wait=true"]]
 
 
-@then(parsers.parse('the types pubdeploy has include "{name}", graded {grade}, needing kubectl that writes'))
-def listed(world, name, grade):
-    kind = types()[name]
-    assert kind.grade == grade and kind.requires(world.need) == ("kubectl-write",)
+@when(parsers.parse('the type "{name}" is looked up among the types pubdeploy has'))
+def looked_up(ctx, world, name):
+    def found():
+        kind = types()[name]
+        return {"grade": kind.grade, "requires": list(kind.requires(world.need))}
+    ctx.attempt(found)

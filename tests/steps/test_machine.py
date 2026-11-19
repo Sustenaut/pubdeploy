@@ -131,14 +131,6 @@ def goes_fulfilling(unit, key):
     assert regions(unit)[key]["states"]["found"]["on"][f"approved.{key}"] == {"target": "fulfilling"}
 
 
-@then(parsers.parse('a machine whose propose need\'s found state goes to fulfilling does not validate, saying "{text}"'))
-def propose_fulfilling_refused(text):
-    compiled_machine = machine.compile([need("k8s.secret:s", grade="propose")], {"schema": 1, "default_mode": "fulfil"})
-    region = compiled_machine["states"]["running"]["states"]["k8s_secret_s"]
-    region["states"]["found"] = {"on": {"approved.k8s_secret_s": {"target": "fulfilling"}}}
-    assert any(text in p for p in machine.validate(compiled_machine)), machine.validate(compiled_machine)
-
-
 @given("a Stop has shortened the walk")
 def shortened(request):
     from pubdeploy import walk  # noqa: PLC0415
@@ -175,19 +167,39 @@ def stops_with(unit, key, stop, warning):
     assert (meta["stop"], meta["stop_warning"]) == (stop, warning)
 
 
-@then("a machine whose region goes to a state it lacks, or continues on Stop without a warning, does not validate")
-def invalid_machines():
-    good = machine.compile([need("upstream:u"), need("deploy.rollout:r", stop="continue", stop_warning="w")])
-    assert machine.validate(good) == []
-    broken = json.loads(json.dumps(good))
-    part = broken["states"]["running"]["states"]["upstream_u"]
-    part["states"]["waiting"]["on"]["start.upstream_u"] = {"target": "nowhere"}
-    assert any("goes to nowhere" in p for p in machine.validate(broken))
-    del broken["states"]["running"]["states"]["deploy_rollout_r"]["meta"]["stop_warning"]
-    assert any("continue needs a stop_warning" in p for p in machine.validate(broken))
-    assert machine.validate({"initial": "else"})[0].startswith("the machine must be")
-    with pytest.raises(ValueError):
-        machine.load(broken)
+@given(parsers.parse('the needs "{a}", and "{b}" that continues on Stop, warning "{warning}"'))
+def and_continue(unit, a, b, warning):
+    unit["needs"] = [need(a), need(b, stop="continue", stop_warning=warning)]
+
+
+@when(parsers.parse('the region "{key}" in "{state}" sends only "{event}", to "{target}"'))
+def sends_only(unit, key, state, event, target):
+    regions(unit)[key]["states"][state] = {"on": {event: {"target": target}}}
+
+
+@when(parsers.parse('the region "{key}" in "{state}" sends "{event}" to "{target}"'))
+def sends(unit, key, state, event, target):
+    regions(unit)[key]["states"][state]["on"][event] = {"target": target}
+
+
+@when(parsers.parse('the region "{key}" has no stop_warning'))
+def no_warning(unit, key):
+    del regions(unit)[key]["meta"]["stop_warning"]
+
+
+@when("the machine is validated")
+def validated(ctx, unit):
+    ctx.attempt(lambda: "\n".join(machine.validate(unit["machine"])))
+
+
+@when(parsers.re(r"the machine (?P<text>\{.*\}) is validated$"))
+def validated_given(ctx, text):
+    ctx.attempt(lambda: "\n".join(machine.validate(json.loads(text))))
+
+
+@when("the machine is loaded")
+def loaded(ctx, unit):
+    ctx.attempt(lambda: machine.load(unit["machine"]))
 
 
 SCRIPTS = {

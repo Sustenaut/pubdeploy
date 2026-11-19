@@ -123,4 +123,6 @@ Feature: k8s.job-once runs a one-off Job once, and says how it went
     And kubectl made no Job
 
   Scenario: pubdeploy lists the type
-    Then the types pubdeploy has include "k8s.job-once", graded auto, needing kubectl that writes
+    When the type "k8s.job-once" is looked up among the types pubdeploy has
+    Then the result's "grade" is "auto"
+    And the result's "requires" is "["kubectl-write"]"

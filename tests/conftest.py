@@ -1,19 +1,23 @@
-"""pubdeploy's suite. The steps it does not define here (`it succeeds`, `it
-prints ...`) are pubrules's plugin's.
+"""pubdeploy's suite. The steps it does not define (`it succeeds`, `it prints
+...`, files, stand-ins) are pubtest's (its GRAMMAR.md); pubtest's pytest
+plugin loads them.
 
-Steps and fixtures more than one steps module uses live here: the scratch
-repository, running the `pubdeploy` command in it, and its files. pytest-bdd
-registers a step only in the module that defines it, or in a conftest.
+What every steps module shares lives here: the release commit pubdeploy pins
+its workflows by, and the built `pubdeploy` that `Given the program under
+test is "pubdeploy"` runs: the one installed beside the Python running this
+suite, unless PUBDEPLOY_BIN_DIR names another.
 """
 
 from __future__ import annotations
 
-import shutil
+import os
 import sys
 from pathlib import Path
 
 import pytest
-from pytest_bdd import given, parsers, then, when
+from pytest_bdd import given, parsers, then
+
+os.environ.setdefault("PUBDEPLOY_BIN_DIR", str(Path(sys.executable).parent))
 
 
 @pytest.fixture(autouse=True)
@@ -23,60 +27,31 @@ def no_release_commit(monkeypatch):
     monkeypatch.delenv("PUBDEPLOY_RELEASE_COMMIT", raising=False)
 
 
-@pytest.fixture
-def repo(tmp_path):
-    root = tmp_path / "repo"
-    root.mkdir()
-    return root
+def refusal(ctx):
+    ctx.refusal_read = True
+    assert ctx.refused is not None, f"it was not refused: the result is {ctx.result!r}"
+    return ctx.refused.error
 
 
-def pubdeploy():
-    """The `pubdeploy` installed beside the Python running this suite."""
-    found = shutil.which("pubdeploy", path=str(Path(sys.executable).parent))
-    assert found, "pubdeploy is not installed in this environment; run `make venv`"
-    return found
+@then(parsers.parse('the refusal is a "{name}"'))
+def refusal_is_a(ctx, name):
+    """The refusal is of the class named, or of one it derives from."""
+    error = refusal(ctx)
+    assert name in [c.__name__ for c in type(error).__mro__], f"it was refused with {error!r}"
 
 
-@pytest.fixture
-def env():
-    return {}
+@then(parsers.parse('the refusal\'s "{key}" is "{wanted}"'))
+def refusal_key(ctx, key, wanted):
+    """The refusal's attribute, as a step's value is compared; "message" is its text."""
+    from pubtest.core import same  # noqa: PLC0415
+    error = refusal(ctx)
+    got = str(error) if key == "message" else getattr(error, key)
+    assert same(got, wanted), f"the refusal's {key} is {got!r}, not {wanted}"
 
 
-@given("an empty repository")
-def empty(repo):
-    pass
-
-
-@given(parsers.parse('the file "{path}" reads "{text}"'))
-@when(parsers.parse('the file "{path}" reads "{text}"'))
-def file_reads(repo, path, text):
-    target = repo / path
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(text + "\n")
-
-
-@when(parsers.re(r'I run pubdeploy (?P<args>(?:"[^"]*" ?)+)'), target_fixture="result")
-def run_pubdeploy(repo, run, env, args):
-    variables = {k: v for k, v in env.items() if k != "resolved"}
-    return run(pubdeploy(), *args.strip().strip('"').split('" "'), cwd=repo, env=variables)
-
-
-@given(parsers.parse('pubdeploy is a release whose tag names "{commit}"'))
-def released(env, commit):
-    env["PUBDEPLOY_RELEASE_COMMIT"] = commit
-
-
-@then(parsers.parse("the repository has {paths}"))
-def has(repo, paths):
-    for path in paths.split(", "):
-        assert (repo / path.strip('"')).is_file(), path
-
-
-@then(parsers.parse('"{path}" contains "{text}"'))
-def contains(repo, path, text):
-    assert text in (repo / path).read_text()
-
-
-@then(parsers.parse('"{path}" does not contain "{text}"'))
-def lacks(repo, path, text):
-    assert text not in (repo / path).read_text()
+@given(parsers.parse('a stand-in "{name}" that prints the file "{path}"'))
+def standin_prints_file(ctx, tmp_path, name, path):
+    """A stand-in whose output is a file of the scratch directory, as it is now."""
+    from pubtest.steps.standins import _refresh, standins  # noqa: PLC0415
+    standins(ctx, tmp_path).add(name, out=(ctx.directory / path).read_text())
+    _refresh(ctx)
