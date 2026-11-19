@@ -1,7 +1,7 @@
 """Steps for how a walk reaches the cluster and the server: channels.py, with
 a stand-in ssh on PATH that keeps its argv and standard input, and answers
 as the server's read-only verb when it is asked for kubectl-read. The shared
-steps are deploy_steps.py's."""
+steps are pubdeploy.testing's."""
 
 from __future__ import annotations
 
@@ -13,10 +13,12 @@ from types import SimpleNamespace
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from deploy_steps import *  # noqa: F403 - the shared steps, and the fixtures pytest-bdd keeps them as
-from deploy_world import CANARY
 from pubdeploy.channels import channels
 from pubdeploy.model import no_server
+from pubdeploy.testing.world import CANARY
+
+# Every scenario runs in the deploy world, under its canary (pubdeploy.testing).
+pytestmark = pytest.mark.usefixtures("world")
 
 scenarios("deploy-channels.feature")
 

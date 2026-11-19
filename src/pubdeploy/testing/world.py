@@ -1,31 +1,35 @@
-"""The world `pubrules deploy` scenarios run in: the example service of
-tests/fixtures/deploy-app, copied, and fakes for everything a check
-touches. kubectl answers from namespaces of Secrets, service accounts,
+"""The world deploy-walk scenarios run in: the sample service
+(fixtures/deploy-app, beside this module), copied, and fakes for everything a
+check touches. kubectl answers from namespaces of Secrets, service accounts,
 Deployments and CronJobs; the GitHub API from secrets, variables and
 workflow runs; HTTP from a status per address; kustomize is the fixture's
 rendered.yaml. Nothing runs kubectl, gh, kustomize or the network.
 
 Every fake Secret value, every fake Bitwarden value and every variable's
 value holds CANARY, and after each scenario no output, no journal and no
-exception text may hold it (`world`'s teardown)."""
+exception text may hold it (`world`'s teardown).
+
+A suite extends the world by subclassing `World` and naming its subclass with
+the `deploy_world_class` fixture (pubdeploy.testing's docstring): the
+variable ./with-secrets sets (`secrets_project`), more gcloud verbs
+(`gcloud_answer`), more patches (`patch`), more state (`__init__`)."""
 
 from __future__ import annotations
 
 import copy
 import json
-import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-import pytest
 import yaml
 
-from pubdeploy.model import Context, Ran, Stop, no_server
 from pubdeploy.github import ApiError
+from pubdeploy.model import Context, Ran, Stop, no_server
+from pubdeploy.testing import fixture_path
 
 CANARY = "canary-7f3e"
-FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "deploy-app"
+FIXTURE = fixture_path("deploy-app")
 SLUG = "example-org/example"
 HEAD = "abc1234" + "0" * 33
 NOW = datetime(2026, 11, 7, 8, 0, tzinfo=UTC)
@@ -57,8 +61,9 @@ def good_github() -> dict[str, Any]:
                                                    "status": "completed", "created_at": "2026-11-07T07:00:00Z"}]}}
 
 
-def good_env() -> dict[str, str]:
-    return {"PUBKIT_SECRETS_PROJECT": "example", "EXAMPLE_COOKIE_SECRET": COOKIE.decode(),
+def good_env(secrets_project: str = "PUBKIT_SECRETS_PROJECT") -> dict[str, str]:
+    """What ./with-secrets gives the walk; `secrets_project` is the variable naming its project."""
+    return {secrets_project: "example", "EXAMPLE_COOKIE_SECRET": COOKIE.decode(),
             "EXAMPLE_FILES_TOKEN": f"{CANARY}-token", "EXAMPLE_USER": f"{CANARY}-user",
             "EXAMPLE_TOKEN": f"{CANARY}-token", "SUSTENAUT_SERVER": "server.example.eu"}
 
@@ -241,6 +246,7 @@ class FakeWriter:
         if self.world.bitwarden_refuses:
             raise RuntimeError(f"Bitwarden said no to {name}")
         self.world.written[name] = value
+        self.world.notes[name] = note
         self.world.values.append(value)
 
 
@@ -335,8 +341,51 @@ class FakeHttp:
         return answer, f"body {CANARY}".encode()
 
 
+class FakeHeads:
+    """Storage, as store.Heads speaks to it: files, and heads by path with ETags."""
+
+    def __init__(self, world, base, tenant, token):
+        self.world, self.base, self.tenant, self.token = world, base, tenant, token
+        world.storage["signed_in"].append((base, tenant, token))
+
+    def upload(self, data):
+        from pubdeploy.store import Refused  # noqa: PLC0415
+        if self.world.storage.get("refuse"):
+            raise Refused(403, b"no")
+        self.world.storage["files"].append((self.tenant, json.loads(data)))
+        return f"file-{len(self.world.storage['files'])}"
+
+    def head(self, path):
+        return self.world.storage["heads"].get(path)
+
+    def point(self, path, hash_, current):
+        self.world.storage["moves"].append((path, hash_, current))
+        if self.world.storage.get("race"):
+            self.world.storage["race"] = False
+            self.world.storage["heads"][path] = "newer"
+            return 412
+        self.world.storage["heads"][path] = hash_
+        return 200
+
+
 class World:
-    """One scenario's service, fakes and what came out of it."""
+    """One scenario's service, fakes and what came out of it.
+
+    A subclass may set `secrets_project`, the variable ./with-secrets names
+    its project in (pubsec 0.1's PUBKIT_SECRETS_PROJECT, later
+    PUBRULES_SECRETS_PROJECT); extend `__init__` for state of its own;
+    override `gcloud_answer` for more of gcloud; and extend `patch` for more
+    of what the walk reaches."""
+
+    secrets_project = "PUBKIT_SECRETS_PROJECT"
+
+    @classmethod
+    def sample(cls) -> Path:
+        """The service the world copies: the sample "deploy-app". A subclass
+        that returns another service must ship the files the world reads from
+        it: pubrules.json (the deploy block), rendered.yaml (what kubectl is
+        given) and zones.json (the hosting zones the DNS check reads)."""
+        return FIXTURE
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -348,7 +397,7 @@ class World:
         self.github = good_github()
         self.http: dict[str, Any] = {"https://storage.example.eu/healthz": 200,
                                      "https://example.example.eu/healthz": 200}
-        self.env = good_env()
+        self.env = good_env(self.secrets_project)
         self.zones = json.loads((root / "zones.json").read_text())["hosting"]["zones"]
         self.slow: dict[str, float] = {}
         self.slug = SLUG
@@ -360,6 +409,7 @@ class World:
         # What register-app.py --site-status finds of this site on the client; None: unreadable.
         self.site: set[str] | None = {"redirect", "logout", "role"}
         self.written: dict[str, str] = {}  # what the Bitwarden writer was given
+        self.notes: dict[str, str] = {}  # by name, the note each write gave
         self.bitwarden_refuses = False
         self.token = f"{CANARY}-write-token"
         self.writer: Any = None  # the context's writer; the command's comes from the token
@@ -374,6 +424,10 @@ class World:
         self.outputs: list[str] = []
         self.code: int | None = None
         self.journal: dict[str, Any] | None = None
+        # Storage, as FakeHeads keeps it: who signed in, the files given, the heads and their moves.
+        self.storage: dict[str, Any] = {"signed_in": [], "files": [], "heads": {}, "moves": []}
+        self.env["PUBRULES_STORAGE_TOKEN"] = f"{CANARY}-storage-token"
+        self.values.append(f"{CANARY}-storage-token")
 
     @property
     def block(self) -> dict[str, Any]:
@@ -417,6 +471,72 @@ class World:
                 *(json.dumps(c) for c in self.calls.get("sent", []))]
         return [text for text in seen for value in [CANARY, *self.values, self.token] if value in text]
 
+    def patch(self, monkeypatch) -> None:
+        """Point what the walk reaches at the fakes, in the copied service's
+        directory: the context, the prompts, the terminal, storage, and,
+        when pubsec is installed, its hooks (`patch_pubsec`)."""
+        import importlib.util  # noqa: PLC0415
+        monkeypatch.chdir(self.root)
+        monkeypatch.setenv("PUBRULES_ANY_VERSION", "1")
+
+        def context(root, config, offline, kubectl_command=None, zones_file=None, namespace=None, server=None,
+                    unit=None):
+            return self.context(config, offline, namespace, unit)
+        monkeypatch.setattr("pubdeploy.context", context)
+        monkeypatch.setattr("pubdeploy.ask", lambda prompt: self.outputs.append(prompt) or (self.answers.pop(0)
+                                                                                            if self.answers else ""))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: self.terminal, raising=False)
+        monkeypatch.setattr("pubdeploy.store.Heads", lambda base, tenant, token: FakeHeads(self, base, tenant, token))
+        if importlib.util.find_spec("pubsec") is not None:
+            self.patch_pubsec(monkeypatch)
+
+    def patch_pubsec(self, monkeypatch) -> None:
+        """pubsec's types, which hold a secret's value, and its hook that asks
+        for the write token: the walk loads them as in use, by their entry
+        points, with Bitwarden's writer, its generator and gcloud faked."""
+        import pubsec.needs.bitwarden as bitwarden  # noqa: PLC0415
+        import pubsec.walk  # noqa: PLC0415
+        monkeypatch.setattr(pubsec.walk, "_writers", {})
+        monkeypatch.setattr(pubsec.walk, "ask_hidden", lambda prompt: self.outputs.append(prompt) or self.token)
+        monkeypatch.setattr(pubsec.walk, "BitwardenWriter", lambda token, project: FakeWriter(self, token))
+        made = bitwarden.generate
+
+        def generate(shape):
+            value = made(shape)
+            self.values.append(value)
+            return value
+        monkeypatch.setattr(bitwarden, "generate", generate)
+        monkeypatch.setattr("pubsec.needs.gcp.gcloud", self.run_gcloud)
+
+    def run_gcloud(self, args: list[str]) -> Ran:
+        """gcloud, as the walk runs it: the call kept, then `gcloud_answer`'s answer."""
+        self.calls.setdefault("gcloud", []).append(args)
+        return self.gcloud_answer(args)
+
+    def gcloud_answer(self, args: list[str]) -> Ran:
+        """gcloud's answers about service accounts and their keys; a key it
+        makes holds the canary in its private key. A subclass answers more
+        verbs, or answers these otherwise, before it defers to this one."""
+        if self.gcloud["missing"]:
+            return Ran(127, "", "gcloud is not installed")
+        flags = gcloud_flags(args)
+        if args[:3] == ["iam", "service-accounts", "describe"]:
+            there = args[3] in self.gcloud["accounts"]
+            return Ran(0, args[3]) if there else Ran(1, "", f"NOT_FOUND: Unknown service account {args[3]}")
+        account = flags.get("iam-account", "")
+        keys = self.gcloud["keys"].setdefault(account, [])
+        if args[3] == "list":
+            return Ran(0, "\n".join(keys) + "\n")
+        if args[3] == "create":
+            key_id = f"{len(keys) + 1:x}" * 40
+            keys.append(key_id[:40])
+            return Ran(0, json.dumps({"type": "service_account", "private_key_id": key_id[:40],
+                                      "private_key": f"-----BEGIN PRIVATE KEY-----\n{CANARY}\n-----END PRIVATE KEY-----"}))
+        if args[3] == "delete":
+            keys.remove(args[4])
+            return Ran(0, "")
+        raise AssertionError(args)
+
 
 def deployments(rendered: str) -> list[dict[str, Any]]:
     """The cluster's Deployments, as the rendered manifests make them, ready:
@@ -426,67 +546,9 @@ def deployments(rendered: str) -> list[dict[str, Any]]:
             for d in yaml.safe_load_all(rendered) if isinstance(d, dict) and d.get("kind") == "Deployment"]
 
 
-@pytest.fixture
-def world(tmp_path, monkeypatch, capsys):
-    """The world, and after the scenario the canary: no value reached an
-    output, the journal or an exception's text."""
-    root = tmp_path / "repo"
-    shutil.copytree(FIXTURE, root)
-    w = World(root)
-    monkeypatch.chdir(root)
-    monkeypatch.setenv("PUBRULES_ANY_VERSION", "1")
-
-    def context(root, config, offline, kubectl_command=None, zones_file=None, namespace=None, server=None,
-                unit=None):
-        return w.context(config, offline, namespace, unit)
-    monkeypatch.setattr("pubdeploy.context", context)
-    monkeypatch.setattr("pubdeploy.ask", lambda prompt: w.outputs.append(prompt) or (w.answers.pop(0)
-                                                                                         if w.answers else ""))
-    # The types that hold a secret's value, and the hook that asks for the
-    # write token, are pubsec's, a test dependency: the walk loads them as in use.
-    import pubsec.walk  # noqa: PLC0415
-    monkeypatch.setattr(pubsec.walk, "_writers", {})
-    monkeypatch.setattr(pubsec.walk, "ask_hidden", lambda prompt: w.outputs.append(prompt) or w.token)
-    monkeypatch.setattr(pubsec.walk, "BitwardenWriter", lambda token, project: FakeWriter(w, token))
-    monkeypatch.setattr("sys.stdin.isatty", lambda: w.terminal, raising=False)
-    import pubsec.needs.bitwarden as bitwarden  # noqa: PLC0415
-    made = bitwarden.generate
-
-    def generate(shape):
-        value = made(shape)
-        w.values.append(value)
-        return value
-    monkeypatch.setattr(bitwarden, "generate", generate)
-    monkeypatch.setattr("pubsec.needs.gcp.gcloud", lambda args: fake_gcloud(w, args))
-    yield w
-    w.outputs += capsys.readouterr()
-    assert not w.leaked(), f"a value was printed: {w.leaked()[0][:2000]}"
-
-
-def fake_gcloud(w: World, args: list[str]) -> Ran:
-    """gcloud's answers about service accounts and their keys; a key it
-    makes holds the canary in its private key."""
-    import base64  # noqa: PLC0415
-    w.calls.setdefault("gcloud", []).append(args)
-    if w.gcloud["missing"]:
-        return Ran(127, "", "gcloud is not installed")
-    flags = dict(a.removeprefix("--").split("=", 1) for a in args if a.startswith("--") and "=" in a)
-    if args[:3] == ["iam", "service-accounts", "describe"]:
-        there = args[3] in w.gcloud["accounts"]
-        return Ran(0, args[3]) if there else Ran(1, "", f"NOT_FOUND: Unknown service account {args[3]}")
-    account = flags.get("iam-account", "")
-    keys = w.gcloud["keys"].setdefault(account, [])
-    if args[3] == "list":
-        return Ran(0, "\n".join(keys) + "\n")
-    if args[3] == "create":
-        key_id = f"{len(keys) + 1:x}" * 40
-        keys.append(key_id[:40])
-        return Ran(0, json.dumps({"type": "service_account", "private_key_id": key_id[:40],
-                                  "private_key": f"-----BEGIN PRIVATE KEY-----\n{CANARY}\n-----END PRIVATE KEY-----"}))
-    if args[3] == "delete":
-        keys.remove(args[4])
-        return Ran(0, "")
-    raise AssertionError(args)
+def gcloud_flags(args: list[str]) -> dict[str, str]:
+    """A gcloud call's --name=value flags, by name."""
+    return dict(a.removeprefix("--").split("=", 1) for a in args if a.startswith("--") and "=" in a)
 
 
 def key_value(key_id: str) -> str:

@@ -24,13 +24,13 @@ def finds_nothing(names):
     assert names == set()
 
 
-# pubdeploy: its package, workflows, actions, tests and example service. They may name
-# example hosts, the tools' and registries' hosts, pubrules itself, and the names
-# pubrules's deploy workflow and the server's program already use; any other
-# host, and any other mention of the owner, is a consumer's.
-DEPLOY = ("src/pubdeploy", "tests/fixtures/deploy-app", "tests/features/deploy-*.feature",
-          "tests/steps/deploy_*.py", "tests/steps/test_deploy_*.py", ".github/workflows/deploy-check.yml",
-          ".github/workflows/k8s-deploy.yml", "actions/deploy-ssh", "k8s/components")
+# pubdeploy: its package (its test harness and example service, pubdeploy.testing,
+# included), workflows, actions and tests. They may name example hosts, the tools'
+# and registries' hosts, pubrules itself, and the names pubrules's deploy workflow
+# and the server's program already use; any other host, and any other mention of
+# the owner, is a consumer's.
+DEPLOY = ("src/pubdeploy", "tests/features/deploy-*.feature", "tests/steps/test_deploy_*.py",
+          ".github/workflows/deploy-check.yml", ".github/workflows/k8s-deploy.yml", "actions/deploy-ssh", "k8s/components")
 # config.py names the owner of pubdeploy's own repository, whose workflows a
 # repository calls, as pubrules's refs.py does.
 OWN_OWNER = {"src/pubdeploy/config.py"}

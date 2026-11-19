@@ -1,9 +1,11 @@
-"""Steps for pubrules deploy check --offline: the shared ones are deploy_steps.py's."""
+"""Steps for pubrules deploy check --offline: the shared ones are pubdeploy.testing's."""
 
 from __future__ import annotations
 
+import pytest
 from pytest_bdd import scenarios
 
-from deploy_steps import *  # noqa: F403 - the shared steps, and the fixtures pytest-bdd keeps them as
+# Every scenario runs in the deploy world, under its canary (pubdeploy.testing).
+pytestmark = pytest.mark.usefixtures("world")
 
 scenarios("deploy-offline.feature")
