@@ -1,4 +1,0 @@
-{
-  "category": "internal",
-  "change": "The suite's scenarios are Given/When/Then on pubtest's steps: every scenario has a When (TEST-04), and the suite's own copies of pubtest's steps are gone"
-}

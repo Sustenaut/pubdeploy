@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.5.2 is released as v0.5.2 from commit 3d7ec02e9e1bd9a107548c233c3efadee20ab2ab.",
+      "content": "pubdeploy 0.5.3 is released as v0.5.3 from commit 26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.5.2",
+            "0.5.3",
             "pubdeploy --version",
-            "pubdeploy 0.5.2",
-            "v0.5.2",
-            "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
+            "pubdeploy 0.5.3",
+            "v0.5.3",
+            "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
           ]
         ]
       },
-      "scope": "the published release v0.5.2 of pubdeploy",
+      "scope": "the published release v0.5.3 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
+          "revision": "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.5.2 was released on 2026-11-18 from commit 3d7ec02e9e1bd9a107548c233c3efadee20ab2ab with these changes.",
+      "content": "pubdeploy 0.5.3 was released on 2026-11-19 from commit 26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,32 +57,28 @@
         ],
         "rows": [
           [
+            "internal",
+            "The suite's scenarios are Given/When/Then on pubtest's steps: every scenario has a When (TEST-04), and the suite's own copies of pubtest's steps are gone"
+          ],
+          [
             "added",
-            "k8s.jwks names where it read the pinned file: the commit of the clone it sits in, in the details; with repository (OWNER/NAME), its fixes name that repository, and a file in another repository's clone that is not there is drift, saying to clone it"
-          ],
-          [
-            "fixed",
-            "A check or fulfil a Stop would shorten no longer starts once the walk is shortened"
-          ],
-          [
-            "fixed",
-            "The need machine sends only an auto need in mode fulfil from found to fulfilling; propose, human and none end at found, as the walk acts on them"
+            "pubdeploy.testing: the deploy-walk test harness and its sample service as an opt-in pytest plugin (`pubdeploy_testing = true`). Its contract for suites that extend it is the World's hooks: `deploy_world_class`, `secrets_project`, `sample()`, `gcloud_answer(args)`, `patch(monkeypatch)`, `patch_pubsec(monkeypatch)` and `notes`"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.5.2 of pubdeploy",
+      "scope": "the published release v0.5.3 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "3d7ec02e9e1bd9a107548c233c3efadee20ab2ab"
+          "revision": "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
         }
       ]
     }
   },
-  "created": "2026-11-18T00:00:00Z",
+  "created": "2026-11-19T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",

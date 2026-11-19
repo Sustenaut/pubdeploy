@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "pubdeploy.testing: the deploy-walk test harness and its sample service as an opt-in pytest plugin (`pubdeploy_testing = true`). Its contract for suites that extend it is the World's hooks: `deploy_world_class`, `secrets_project`, `sample()`, `gcloud_answer(args)`, `patch(monkeypatch)`, `patch_pubsec(monkeypatch)` and `notes`"
-}
