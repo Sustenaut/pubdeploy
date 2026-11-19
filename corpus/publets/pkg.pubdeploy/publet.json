@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.5.3 is released as v0.5.3 from commit 26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8.",
+      "content": "pubdeploy 0.6.0 is released as v0.6.0 from commit 1df56a020a99bde3c3fb81e56c57640e67266ca2.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.5.3",
+            "0.6.0",
             "pubdeploy --version",
-            "pubdeploy 0.5.3",
-            "v0.5.3",
-            "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
+            "pubdeploy 0.6.0",
+            "v0.6.0",
+            "1df56a020a99bde3c3fb81e56c57640e67266ca2"
           ]
         ]
       },
-      "scope": "the published release v0.5.3 of pubdeploy",
+      "scope": "the published release v0.6.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
+          "revision": "1df56a020a99bde3c3fb81e56c57640e67266ca2"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.5.3 was released on 2026-11-19 from commit 26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8 with these changes.",
+      "content": "pubdeploy 0.6.0 was released on 2026-11-19 from commit 1df56a020a99bde3c3fb81e56c57640e67266ca2 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,23 +57,19 @@
         ],
         "rows": [
           [
-            "internal",
-            "The suite's scenarios are Given/When/Then on pubtest's steps: every scenario has a When (TEST-04), and the suite's own copies of pubtest's steps are gone"
-          ],
-          [
-            "added",
-            "pubdeploy.testing: the deploy-walk test harness and its sample service as an opt-in pytest plugin (`pubdeploy_testing = true`). Its contract for suites that extend it is the World's hooks: `deploy_world_class`, `secrets_project`, `sample()`, `gcloud_answer(args)`, `patch(monkeypatch)`, `patch_pubsec(monkeypatch)` and `notes`"
+            "removed",
+            "pubdeploy.testing's World no longer has patch_pubsec, nor patches pubsec's types: a suite whose walk loads another package's types patches them in its own World's patch(monkeypatch), after calling super (pubsec 0.3's suite does). The hook contract is deploy_world_class, secrets_project, sample(), gcloud_answer(args), patch(monkeypatch) and notes"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.5.3 of pubdeploy",
+      "scope": "the published release v0.6.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "26a01c7b96bc3a2dad5719e0e3918863ba6fdaf8"
+          "revision": "1df56a020a99bde3c3fb81e56c57640e67266ca2"
         }
       ]
     }
