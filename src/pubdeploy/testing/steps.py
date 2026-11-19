@@ -1126,8 +1126,10 @@ def job_completed(world, job, hours):
 @given("the cluster's objects differ from the manifests")
 def objects_differ(world):
     world.cluster["diff_code"] = 1
-    world.cluster["diff_out"] = ("diff -u -N /tmp/LIVE/networking.k8s.io.v1.NetworkPolicy.example.page-only "
-                                 "/tmp/MERGED/networking.k8s.io.v1.NetworkPolicy.example.page-only\n-  a\n+  b\n")
+    # kubectl diff names its live and merged copies under its own temporary
+    # directory; the paths are only text here, and nothing reads them.
+    world.cluster["diff_out"] = ("diff -u -N LIVE-1/networking.k8s.io.v1.NetworkPolicy.example.page-only "
+                                 "MERGED-1/networking.k8s.io.v1.NetworkPolicy.example.page-only\n-  a\n+  b\n")
 
 
 @given("the cluster refuses a server-side dry run")

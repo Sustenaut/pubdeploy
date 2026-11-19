@@ -381,7 +381,10 @@ class World:
 
     @classmethod
     def sample(cls) -> Path:
-        """The service the world copies: the sample "deploy-app"."""
+        """The service the world copies: the sample "deploy-app". A subclass
+        that returns another service must ship the files the world reads from
+        it: pubrules.json (the deploy block), rendered.yaml (what kubectl is
+        given) and zones.json (the hosting zones the DNS check reads)."""
         return FIXTURE
 
     def __init__(self, root: Path) -> None:

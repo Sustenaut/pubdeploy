@@ -3,7 +3,8 @@
   "bin": "pubdeploy",
   "ci": {
     "language": "python",
-    "release": {}
+    "release": {},
+    "with": {"sonar-args": "-Dsonar.exclusions=src/pubdeploy/testing/fixtures/**"}
   },
   "protect": {
     "checks": [
