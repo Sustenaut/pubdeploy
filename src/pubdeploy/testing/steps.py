@@ -1,26 +1,29 @@
-"""The steps the pubrules deploy features share. pytest-bdd keeps a step in
-the module that defines it, so each test_deploy_*.py takes them all with
-`from deploy_steps import *`, the fixtures they are kept as included."""
+"""The deploy-walk steps and fixtures, loaded as a pytest plugin (see
+pubdeploy.testing): a plugin's steps reach every test module of the suite.
+The world they act on is world.py's."""
 
 from __future__ import annotations
 
 import base64
 import json
+import shutil
 import sys
 import threading
 import time
 import types as modules
 from datetime import timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 import yaml
 from pytest_bdd import given, parsers, then, when
 
-from deploy_world import CANARY, NOW, World, key_value, run, world  # noqa: F401 - the fixture
 from pubdeploy import load
 from pubdeploy.model import Result, Stop
 from pubdeploy.schema import journal_schema, problems, validate
+from pubdeploy.testing import fixture_path
+from pubdeploy.testing.world import CANARY, NOW, FakeWriter, World, key_value, run
 
 
 def value_of(text: str):
@@ -37,6 +40,41 @@ def entry(world: World, need_id: str) -> dict:
         if f"{e['type']}:{name}" == need_id:
             return e
     raise AssertionError(f"the block lists no {need_id}")
+
+
+# --- the world -----------------------------------------------------------------
+
+
+@pytest.fixture
+def deploy_world_class() -> type[World]:
+    """The world `world` makes: a suite extends it by overriding this fixture."""
+    return World
+
+
+@pytest.fixture
+def world(deploy_world_class, tmp_path, monkeypatch, capsys):
+    """The world, and after the scenario the canary: no value reached an
+    output, the journal or an exception's text."""
+    root = tmp_path / "repo"
+    shutil.copytree(deploy_world_class.sample(), root)
+    w = deploy_world_class(root)
+    w.patch(monkeypatch)
+    yield w
+    w.outputs += capsys.readouterr()
+    assert not w.leaked(), f"a value was printed: {w.leaked()[0][:2000]}"
+
+
+@given(parsers.parse('a file "{path}" copied from the sample "{source}"'))
+def copied_from_sample(pubtest_ctx, path, source):
+    """pubtest's `copied from`, for the sample service, which is not in the
+    suite's repository: a file or a directory of it, to P."""
+    origin = fixture_path(source)
+    target = (pubtest_ctx.directory or Path.cwd()) / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if origin.is_dir():
+        shutil.copytree(origin, target, dirs_exist_ok=True)
+    else:
+        shutil.copyfile(origin, target)
 
 
 # --- the block ---------------------------------------------------------------
@@ -148,7 +186,7 @@ def offered(monkeypatch):
     module = modules.ModuleType("example_needs")
     monkeypatch.setitem(sys.modules, "example_needs", module)
     from importlib.metadata import entry_points  # noqa: PLC0415
-    installed = list(entry_points(group="sustenaut.needs"))  # pubsec's, a test dependency
+    installed = list(entry_points(group="sustenaut.needs"))  # the installed packages' (pubsec's)
     monkeypatch.setattr("pubdeploy.registry.entry_points", lambda group: installed + list(points))
     return SimpleNamespace(points=points, module=module)
 
@@ -190,9 +228,9 @@ def offers_bad(offered, dist, part, value):
 
 
 @when(parsers.re(r'I run pubdeploy (?P<args>(?:"[^"]*" ?)+)'), target_fixture="result")
-def run_pubdeploy(world, ctx, args):
-    run(world, ctx, *args.strip().strip('"').split('" "'))
-    return ctx.outcome
+def run_pubdeploy(world, pubtest_ctx, args):
+    run(world, pubtest_ctx, *args.strip().strip('"').split('" "'))
+    return pubtest_ctx.outcome
 
 
 @when("I check the deploy block")
@@ -268,7 +306,7 @@ def walk_order(world, datatable):
 
 @then("the walk order is the example's")
 def walk_order_example(world, tmp_path):
-    fresh = World(world.root)
+    fresh = type(world)(world.root)
     assert plan(world).order == load(fresh.root, fresh.config, fresh.context()).order
 
 
@@ -363,7 +401,7 @@ def journal_walk(world, origin):
 
 @then(parsers.parse("the journal lists the {count:d} needs in walk order, none with params"))
 def journal_needs(world, count):
-    fresh = World(world.root)
+    fresh = type(world)(world.root)
     order = load(fresh.root, fresh.config, fresh.context()).order
     assert [n["id"] for n in world.journal["needs"]] == order and len(order) == count
     assert all("params" not in n for n in world.journal["needs"])
@@ -657,7 +695,7 @@ def bitwarden_lacks(world, name):
 
 @given("the environment is not ./with-secrets'")
 def outside(world):
-    del world.env["PUBKIT_SECRETS_PROJECT"]
+    del world.env[world.secrets_project]
 
 
 @given(parsers.parse('the need "{need_id}" has the shape "{shape}"'))
@@ -1017,41 +1055,6 @@ def problem_names(world, first, second, third):
 # --- the journal in storage -------------------------------------------------------------------------
 
 
-class FakeHeads:
-    """Storage, as store.Heads speaks to it: files, and heads by path with ETags."""
-
-    def __init__(self, world, base, tenant, token):
-        self.world, self.base, self.tenant, self.token = world, base, tenant, token
-        world.storage["signed_in"].append((base, tenant, token))
-
-    def upload(self, data):
-        from pubdeploy.store import Refused  # noqa: PLC0415
-        if self.world.storage.get("refuse"):
-            raise Refused(403, b"no")
-        self.world.storage["files"].append((self.tenant, json.loads(data)))
-        return f"file-{len(self.world.storage['files'])}"
-
-    def head(self, path):
-        return self.world.storage["heads"].get(path)
-
-    def point(self, path, hash_, current):
-        self.world.storage["moves"].append((path, hash_, current))
-        if self.world.storage.get("race"):
-            self.world.storage["race"] = False
-            self.world.storage["heads"][path] = "newer"
-            return 412
-        self.world.storage["heads"][path] = hash_
-        return 200
-
-
-@pytest.fixture(autouse=True)
-def storage(world, monkeypatch):
-    world.storage = {"signed_in": [], "files": [], "heads": {}, "moves": []}
-    world.env["PUBRULES_STORAGE_TOKEN"] = f"{CANARY}-storage-token"
-    world.values.append(f"{CANARY}-storage-token")
-    monkeypatch.setattr("pubdeploy.store.Heads", lambda base, tenant, token: FakeHeads(world, base, tenant, token))
-
-
 @given(parsers.parse('storage holds the head "{path}" at "{etag}"'))
 def head_at(world, path, etag):
     world.storage["heads"][path] = etag
@@ -1136,7 +1139,6 @@ def dry_run_refused(world):
 @given("PUBSEC_WRITE_TOKEN_FILE names the write token's file")
 def token_file(world, monkeypatch):
     import pubsec.walk  # noqa: PLC0415
-    from deploy_world import FakeWriter  # noqa: PLC0415
     world.env["PUBSEC_WRITE_TOKEN_FILE"] = "/var/run/secrets/bitwarden-write/token"
     world.hook_terminal = []
 

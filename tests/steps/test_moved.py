@@ -10,11 +10,11 @@ from dataclasses import fields
 from pathlib import Path
 from types import SimpleNamespace
 
-from deploy_world import FIXTURE
 from pubdeploy import prepare, providers
 from pubdeploy.model import Context, Need
 from pubdeploy.registry import BUILTIN, lacking, types
 from pubdeploy.schema import need_problems
+from pubdeploy.testing.world import FIXTURE
 from pubdeploy.units import retrigger, trigger_problems
 from pytest_bdd import given, parsers, scenarios, when
 

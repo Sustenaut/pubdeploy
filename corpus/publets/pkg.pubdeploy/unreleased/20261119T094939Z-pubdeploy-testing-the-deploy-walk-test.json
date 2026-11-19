@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "pubdeploy.testing: the deploy-walk test harness and its sample service as an opt-in pytest plugin"
+}

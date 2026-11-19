@@ -76,6 +76,10 @@
       "reason": "Names files.pythonhosted.org only as python-statemachine's wheel address, pinned by its sha256: a dependency downloaded, nothing published to PyPI"
     },
     {
+      "path": "src/pubdeploy/testing/**",
+      "reason": "Fakes of these services and the sample service they walk: the test harness pubdeploy ships for other suites (pubdeploy.testing)"
+    },
+    {
       "path": "tests/**",
       "reason": "Fakes of these services"
     }

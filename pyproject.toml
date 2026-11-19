@@ -33,6 +33,11 @@ pubdeploy = "pubdeploy.hooks:check"
 [project.entry-points."sustenaut.bump"]
 pubdeploy = "pubdeploy.hooks:bump"
 
+# The deploy walk's test harness, for a suite that sets pubdeploy_testing = true
+# in its pytest.ini (pubdeploy/testing/__init__.py); it loads nothing otherwise.
+[project.entry-points.pytest11]
+"pubdeploy.testing" = "pubdeploy.testing.plugin"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -43,6 +48,12 @@ pubdeploy = [
     # The commit of the release's tag, which wheel.yml writes before it
     # builds the wheel; a source tree has none (config.release_commit).
     "release-commit",
+]
+# The sample service pubdeploy.testing's world walks; a glob skips the dot directory.
+"pubdeploy.testing" = [
+    "fixtures/deploy-app/*",
+    "fixtures/deploy-app/**/*",
+    "fixtures/deploy-app/.github/workflows/*",
 ]
 
 # `make functional` measures the suite, the `pubdeploy` processes it starts

@@ -14,13 +14,16 @@ from __future__ import annotations
 
 import json
 
-from deploy_steps import *  # noqa: F403 - the shared steps, and the fixtures pytest-bdd keeps them as
-from deploy_world import CANARY, run, world  # noqa: F401 - the fixture
+import pytest
 from pubdeploy import load
 from pubdeploy.model import Need, Result
 from pubdeploy.registry import types
+from pubdeploy.testing.world import CANARY, run
 from pubdeploy.walk import walk
 from pytest_bdd import given, parsers, scenarios, then, when
+
+# Every scenario runs in the deploy world, under its canary (pubdeploy.testing).
+pytestmark = pytest.mark.usefixtures("world")
 
 scenarios("deploy-canary.feature")
 

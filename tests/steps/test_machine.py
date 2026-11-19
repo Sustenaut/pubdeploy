@@ -1,6 +1,6 @@
 """Steps for a unit's machine: compiled from needs, checked, driven alike by
 python-statemachine and XState v5, and pubdeploy's machine and walk --need against the
-example service. The shared deploy steps are deploy_steps.py's."""
+example service. The shared deploy steps are pubdeploy.testing's."""
 
 from __future__ import annotations
 
@@ -15,8 +15,10 @@ import pytest
 import yaml
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from deploy_steps import *  # noqa: F403 - the shared steps, and the fixtures pytest-bdd keeps them as
 from pubdeploy import machine
+
+# Every scenario runs in the deploy world, under its canary (pubdeploy.testing).
+pytestmark = pytest.mark.usefixtures("world")
 
 scenarios("machine.feature")
 

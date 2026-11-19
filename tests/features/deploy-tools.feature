@@ -165,13 +165,13 @@ Feature: The tools `pubrules deploy check` reaches outside a test's fakes
 
   Scenario: The journal says a walk on a laptop ran there
     Given a scratch directory
-    And a file "repo" copied from "tests/fixtures/deploy-app"
+    And a file "repo" copied from the sample "deploy-app"
     When the service in "repo" is checked offline, in the environment {}
     Then the result's "from" is "laptop"
 
   Scenario Outline: The journal says where the walk ran, and by whom
     Given a scratch directory
-    And a file "repo" copied from "tests/fixtures/deploy-app"
+    And a file "repo" copied from the sample "deploy-app"
     When the service in "repo" is checked offline, in the environment <env>
     Then the result's "from" is "<origin>"
     And the result's "by" is "<by>"
@@ -216,8 +216,8 @@ Feature: The tools `pubrules deploy check` reaches outside a test's fakes
   Scenario: Deploy check runs whole
     Given a scratch directory
     And the program under test is "pubdeploy"
-    And a file "." copied from "tests/fixtures/deploy-app"
-    And a file "../infra/pubrules.json" copied from "tests/fixtures/deploy-app/zones.json"
+    And a file "." copied from the sample "deploy-app"
+    And a file "../infra/pubrules.json" copied from the sample "deploy-app/zones.json"
     And the file "zones.json" is removed
     And a stand-in "kustomize" that prints the file "rendered.yaml"
     And the environment sets "PUBRULES_ANY_VERSION" to "1"
@@ -228,7 +228,7 @@ Feature: The tools `pubrules deploy check` reaches outside a test's fakes
   Scenario: Deploy check with a zones file that is not there
     Given a scratch directory
     And the program under test is "pubdeploy"
-    And a file "." copied from "tests/fixtures/deploy-app"
+    And a file "." copied from the sample "deploy-app"
     And the file "zones.json" is removed
     And a stand-in "kustomize" that prints the file "rendered.yaml"
     And the environment sets "PUBRULES_ANY_VERSION" to "1"
@@ -239,7 +239,7 @@ Feature: The tools `pubrules deploy check` reaches outside a test's fakes
   Scenario Outline: Deploy check reads only a pubrules json beside the repository
     Given a scratch directory
     And the program under test is "pubdeploy"
-    And a file "." copied from "tests/fixtures/deploy-app"
+    And a file "." copied from the sample "deploy-app"
     And the environment sets "PUBRULES_ANY_VERSION" to "1"
     When I run "pubdeploy check --offline --zones <path>"
     Then it fails
