@@ -11,6 +11,7 @@
       "plugin": "github.actions-oidc",
       "paths": [
         ".github/workflows/deploy-check.yml",
+        ".github/workflows/wheel.yml",
         "src/pubdeploy/store.py"
       ],
       "mode": "required"
