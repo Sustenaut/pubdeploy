@@ -2,7 +2,8 @@
 offers under the entry-point group `sustenaut.needs`, each `module:object`
 naming an object with what model.NeedType has: an instance, whose check and
 fulfil the walk calls, not a class. A provider need import nothing of
-pubdeploy's: any result with state, summary, fix and details serves.
+pubdeploy's: any result with state, summary, fix and details serves
+(contract.py holds the contract, and the checks below).
 
 pubsec offers the types that hold a secret's value (PUBSEC_TYPES),
 which pubrules had built in until pubsec took them.
@@ -18,22 +19,19 @@ left out, naming both.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from importlib.metadata import EntryPoint, entry_points
 from typing import Any
 
-from .model import GRADES, NeedType
+from .contract import NEEDS, problems
+from .model import NeedType
 from .types.auth import SignInClient
 from .types.github import VariableEntry
 from .types.k8s import CronJob, JobOnce, Jwks, Manifests, Namespace, SecretsDeclared
 from .types.net import Health, Site, Tenant, Upstream
 from .types.rollout import Gate, Rollout
 
-GROUP = "sustenaut.needs"
-TYPE = re.compile(r"[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+")
-LONGEST = 10.0
-LONGEST_FULFIL = 900.0
+GROUP = NEEDS
 BUILTIN: tuple[NeedType, ...] = (Namespace(), SecretsDeclared(), Manifests(), CronJob(), JobOnce(), Jwks(), VariableEntry(), Gate(),
                                  Upstream(), Site(), Tenant(), Rollout(), Health(), SignInClient())
 PUBDEPLOY = "pubdeploy"
@@ -52,29 +50,10 @@ class Registry:
     warnings: list[str] = field(default_factory=list)
 
 
-def type_problems(kind: Any) -> list[str]:
-    """What keeps `kind` from being a need type."""
-    out = []
-    name = getattr(kind, "type", None)
-    if not isinstance(name, str) or not TYPE.fullmatch(name):
-        out.append("its type must be dotted lower-case words, such as example.thing")
-    schema = getattr(kind, "schema", None)
-    if not isinstance(schema, dict) or schema.get("type") != "object" or schema.get("additionalProperties") is not False:
-        out.append("its schema must be an object's, with additionalProperties false")
-    budget = getattr(kind, "budget", None)
-    if isinstance(budget, bool) or not isinstance(budget, int | float) or not 0 < budget <= LONGEST:
-        out.append(f"its budget must be more than 0 and at most {LONGEST:g} seconds")
-    fulfil = getattr(kind, "fulfil_budget", 1.0)
-    if isinstance(fulfil, bool) or not isinstance(fulfil, int | float) or not 0 < fulfil <= LONGEST_FULFIL:
-        out.append(f"its fulfil_budget must be more than 0 and at most {LONGEST_FULFIL:g} seconds")
-    if getattr(kind, "grade", None) not in GRADES:
-        out.append(f"its grade must be one of {', '.join(GRADES)}")
-    if not isinstance(getattr(kind, "offline", None), bool):
-        out.append("its offline must be true or false")
-    for method in ("default_name", "depends_on", "check", "fulfil"):
-        if not callable(getattr(kind, method, None)):
-            out.append(f"it has no {method}")
-    return out
+def installed(group: str) -> list[EntryPoint]:
+    """The entry points of `group` the installed packages offer: what the walk
+    loads, and what pubdeploy.testing's world puts its providers in place of."""
+    return list(entry_points(group=group))
 
 
 def load(points: list[EntryPoint] | None = None) -> Registry:
@@ -83,7 +62,7 @@ def load(points: list[EntryPoint] | None = None) -> Registry:
     for kind in BUILTIN:
         out.types[kind.type] = kind
         out.origin[kind.type] = PUBDEPLOY
-    found = sorted(entry_points(group=GROUP) if points is None else points, key=lambda p: (p.name, p.value))
+    found = sorted(installed(GROUP) if points is None else points, key=lambda p: (p.name, p.value))
     for point in found:
         dist = getattr(getattr(point, "dist", None), "name", None) or "an unknown package"
         label = f"{GROUP} entry point {point.name} ({point.value}, from {dist})"
@@ -92,7 +71,7 @@ def load(points: list[EntryPoint] | None = None) -> Registry:
         except Exception as e:  # noqa: BLE001 - a bad provider is reported, not fatal
             out.warnings.append(f"{label} does not load ({type(e).__name__}), and is left out")
             continue
-        if bad := type_problems(kind):
+        if bad := problems(kind):
             out.warnings.append(f"{label} is left out: {'; '.join(bad)}")
             continue
         if kind.type in out.types:

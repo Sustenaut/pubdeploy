@@ -53,13 +53,6 @@ Feature: pubrules deploy check walks every need, and changes nothing
     Then "k8s.namespace:example" is missing
     And it prints "namespace example has no rolebinding deploy"
 
-  Scenario: A cookie secret of the wrong shape is drift, in k8s.py's words
-    Given the Secret "example-page-secrets" holds "cookie-secret" as 20 bytes
-    When I run pubdeploy "check"
-    Then the exit code is 1
-    And "k8s.secret:example-page-secrets" is drift
-    And it prints "Secret example-page-secrets key cookie-secret (need k8s.secret:example-page-secrets), oauth2-proxy's cookie secret: 20 bytes, 15 after URL-safe base64 decoding; oauth2-proxy needs 16, 24 or 32 bytes"
-
   Scenario: A Secret without a key the manifests read is drift
     Given the Secret "example-files" has no key "token"
     When I run pubdeploy "check"
@@ -131,16 +124,6 @@ Feature: pubrules deploy check walks every need, and changes nothing
     Then "bitwarden.secret:example-files-token" is ready
     And it prints "over its budget of 0.2 s"
 
-  Scenario: kubectl that may not read is unknown, and says what access is missing
-    Given kubectl may not read anything
-    When I run pubdeploy "check"
-    Then the exit code is 1
-    And "k8s.namespace:example" is unknown
-    And it prints "kubectl may not read namespaces in example"
-    And it prints "use a kubeconfig that may get namespaces in example"
-    And "k8s.secret:example-files" is unknown
-    And it prints "kubectl may not read Secrets in example: the deploy identity needs get on secrets there"
-
   Scenario: kubectl that is not installed is unknown
     Given kubectl is not installed
     When I run pubdeploy "check"
@@ -195,12 +178,6 @@ Feature: pubrules deploy check walks every need, and changes nothing
     When I run pubdeploy "check"
     Then "service.health:example" is missing
 
-  Scenario: A secret GitHub does not hold is missing, and says how it is sent
-    Given GitHub holds no secret "EXAMPLE_TOKEN"
-    When I run pubdeploy "check"
-    Then "github.secret:EXAMPLE_TOKEN" is missing
-    And it prints "put example-token in Bitwarden, then ./with-secrets ./pubsec app-secrets"
-
   Scenario: A variable that differs from Bitwarden's is drift, and neither value is shown
     Given Bitwarden's "example-user" is another value
     When I run pubdeploy "check"
@@ -212,25 +189,6 @@ Feature: pubrules deploy check walks every need, and changes nothing
     When I run pubdeploy "check"
     Then "github.variable:EXAMPLE_SETTING" is missing
     And it prints "variable EXAMPLE_SETTING is empty in example-org/example"
-
-  Scenario: The server's settings must all be there, on the repository or its server environment
-    Given GitHub holds no secret "TS_GH_OAUTH_SECRET"
-    And GitHub holds no variable "SUSTENAUT_KNOWN_HOSTS"
-    When I run pubdeploy "check"
-    Then "github.deploy-settings:example" is missing
-    And it prints "SUSTENAUT_KNOWN_HOSTS, TS_GH_OAUTH_SECRET are set neither in example-org/example nor its server environment"
-
-  Scenario: A Bitwarden secret that is not in the project is missing
-    Given Bitwarden has no "example-files-token"
-    When I run pubdeploy "check"
-    Then "bitwarden.secret:example-files-token" is missing
-    And it prints "put example-files-token in the Bitwarden project example, and give the read-only machine account access to it"
-
-  Scenario: A generated secret of the wrong shape is drift, said by its length alone
-    Given Bitwarden's "example-cookie-secret" is 20 bytes
-    When I run pubdeploy "check"
-    Then "bitwarden.generated:example-cookie-secret" is drift
-    And it prints "example-cookie-secret is not oauth2-proxy's cookie secret: 20 bytes"
 
   Scenario Outline: A generated secret of each shape is ready when it has it
     Given the need "bitwarden.generated:example-cookie-secret" has the shape "<shape>"

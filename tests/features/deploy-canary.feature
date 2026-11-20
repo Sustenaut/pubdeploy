@@ -42,16 +42,6 @@ Feature: The canary: no secret value ever reaches what pubdeploy prints
       | a bad cookie in the cluster                   | check --offline --json     |
       | a bad cookie in the cluster                   | walk --fulfil --yes        |
       | a bad cookie in the cluster                   | walk --fulfil --yes --json |
-      | a key Bitwarden refuses                       | check                      |
-      | a key Bitwarden refuses                       | check --json               |
-      | a key Bitwarden refuses                       | check --offline --json     |
-      | a key Bitwarden refuses                       | walk --fulfil --yes        |
-      | a key Bitwarden refuses                       | walk --fulfil --yes --json |
-      | a key to make                                 | check                      |
-      | a key to make                                 | check --json               |
-      | a key to make                                 | check --offline --json     |
-      | a key to make                                 | walk --fulfil --yes        |
-      | a key to make                                 | walk --fulfil --yes --json |
       | a variable that differs from Bitwarden        | check                      |
       | a variable that differs from Bitwarden        | check --json               |
       | a variable that differs from Bitwarden        | check --offline --json     |

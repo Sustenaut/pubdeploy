@@ -180,14 +180,18 @@ class Point:
 
 
 @pytest.fixture
-def offered(monkeypatch):
-    """The entry points the installed packages offer, and their module."""
+def offered(request, monkeypatch):
+    """The entry points the walk loads (the world's providers, in a scenario with
+    a world), and more a scenario makes up, with their module."""
+    if "world" in request.fixturenames:
+        request.getfixturevalue("world")  # its providers first, so these come on top
     points: list[Point] = []
     module = modules.ModuleType("example_needs")
     monkeypatch.setitem(sys.modules, "example_needs", module)
-    from importlib.metadata import entry_points  # noqa: PLC0415
-    installed = list(entry_points(group="sustenaut.needs"))  # the installed packages' (pubsec's)
-    monkeypatch.setattr("pubdeploy.registry.entry_points", lambda group: installed + list(points))
+    import pubdeploy.registry  # noqa: PLC0415
+    before = pubdeploy.registry.installed
+    monkeypatch.setattr(pubdeploy.registry, "installed",
+                        lambda group: before(group) + (list(points) if group == "sustenaut.needs" else []))
     return SimpleNamespace(points=points, module=module)
 
 

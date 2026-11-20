@@ -1,0 +1,12 @@
+[sustenaut.needs]
+bitwarden-adopt = standin_provider:BITWARDEN_ADOPT
+bitwarden-generated = standin_provider:BITWARDEN_GENERATED
+bitwarden-secret = standin_provider:BITWARDEN_SECRET
+gcp-service-account-key = standin_provider:GCP_SERVICE_ACCOUNT_KEY
+github-deploy-settings = standin_provider:GITHUB_DEPLOY_SETTINGS
+github-secret = standin_provider:GITHUB_SECRET
+github-variable = standin_provider:GITHUB_VARIABLE
+k8s-secret = standin_provider:K8S_SECRET
+
+[sustenaut.walk]
+bitwarden = standin_provider:prepare

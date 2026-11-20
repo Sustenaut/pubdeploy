@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: standin
+Version: 0
+Summary: pubdeploy's suite's stand-in provider (tests/standin_provider.py), found on PYTHONPATH, never installed

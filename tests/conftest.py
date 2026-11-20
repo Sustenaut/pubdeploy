@@ -3,8 +3,10 @@
 plugin loads them.
 
 The deploy scenarios run in pubdeploy.testing's world (pytest.ini sets
-pubdeploy_testing). The walk here also loads pubsec's types, so this suite's
-own World patches them: the plugin patches only pubdeploy.
+pubdeploy_testing). The walk implies need types pubdeploy does not offer
+(registry.PUBSEC_TYPES); this suite's world loads them from a stand-in
+provider (standin_provider.py), built on pubdeploy.contract alone, so the
+suite needs no provider installed and imports none.
 
 What every steps module shares lives here: the release commit pubdeploy pins
 its workflows by, and the built `pubdeploy` that `Given the program under
@@ -14,7 +16,6 @@ suite, unless PUBDEPLOY_BIN_DIR names another.
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -22,7 +23,8 @@ from pathlib import Path
 import pytest
 from pytest_bdd import given, parsers, then
 
-from pubdeploy.testing.world import FakeWriter, World
+import standin_provider
+from pubdeploy.testing.world import Providers, World
 
 os.environ.setdefault("PUBDEPLOY_BIN_DIR", str(Path(sys.executable).parent))
 
@@ -64,31 +66,24 @@ def standin_prints_file(ctx, tmp_path, name, path):
     _refresh(ctx)
 
 
-# --- the deploy world, with pubsec's types patched where pubsec is installed -------------------
+# --- the deploy world, its providers the stand-in's ---------------------------------------------
 
 
 class SuiteWorld(World):
-    """pubdeploy.testing's world, and pubsec's types and hook, which the walk
-    here loads by their entry points: their writer, generator and gcloud
-    pointed at the world."""
+    """pubdeploy.testing's world, whose walk loads the stand-in provider's types and hook."""
+
+    def __init__(self, root) -> None:
+        super().__init__(root)
+        self.hook_terminal: list[bool] = []  # how the stand-in's hook was called, each time
+        self.hook_writer = None  # the writer it gives, once a token is asked for
+
+    def providers(self) -> Providers:
+        needs, hooks = standin_provider.points()
+        return Providers(tuple(needs), tuple(hooks))
 
     def patch(self, monkeypatch) -> None:
         super().patch(monkeypatch)
-        if importlib.util.find_spec("pubsec") is None:
-            return
-        import pubsec.needs.bitwarden as bitwarden  # noqa: PLC0415
-        import pubsec.walk  # noqa: PLC0415
-        monkeypatch.setattr(pubsec.walk, "_writers", {})
-        monkeypatch.setattr(pubsec.walk, "ask_hidden", lambda prompt: self.outputs.append(prompt) or self.token)
-        monkeypatch.setattr(pubsec.walk, "BitwardenWriter", lambda token, project: FakeWriter(self, token))
-        made = bitwarden.generate
-
-        def generate(shape):
-            value = made(shape)
-            self.values.append(value)
-            return value
-        monkeypatch.setattr(bitwarden, "generate", generate)
-        monkeypatch.setattr("pubsec.needs.gcp.gcloud", self.run_gcloud)
+        monkeypatch.setattr(standin_provider, "WORLD", self)
 
 
 @pytest.fixture
@@ -97,18 +92,18 @@ def deploy_world_class() -> type[World]:
 
 
 @given("PUBSEC_WRITE_TOKEN_FILE names the write token's file")
-def token_file(world, monkeypatch):
-    import pubsec.walk  # noqa: PLC0415
+def token_file(world):
     world.env["PUBSEC_WRITE_TOKEN_FILE"] = "/var/run/secrets/bitwarden-write/token"
-    world.hook_terminal = []
-
-    def prepare(ctx, plan, terminal):  # as pubsec's, which reads the file without a terminal
-        world.hook_terminal.append(terminal)
-        if not terminal and ctx.env.get("PUBSEC_WRITE_TOKEN_FILE"):
-            ctx.bitwarden_writer = FakeWriter(world, world.token)
-    monkeypatch.setattr(pubsec.walk, "prepare", prepare)
 
 
 @then("the hook was called without a terminal")
 def hook_without_terminal(world):
     assert world.hook_terminal and not any(world.hook_terminal), world.hook_terminal
+
+
+@given("the program finds the stand-in provider")
+def standin_on_path(monkeypatch):
+    """A `pubdeploy` the scenario starts loads the stand-in's types and hook, as its
+    metadata beside it says, from PYTHONPATH: it is never installed."""
+    here = Path(standin_provider.__file__).resolve().parent
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(standin_provider.DIST.parent), str(here)]))
