@@ -48,10 +48,9 @@ conftest.py:
     class PubsecWorld(World):
         secrets_project = "PUBRULES_SECRETS_PROJECT"
 
-        def gcloud_answer(self, args):
-            if args[:3] == ["iam", "service-accounts", "get-iam-policy"]:
-                ...
-            return super().gcloud_answer(args)
+        def patch(self, monkeypatch):
+            super().patch(monkeypatch)
+            monkeypatch.setattr("pubsec.needs.gcp.gcloud", self.run_gcloud)  # its own fake
 
     @pytest.fixture
     def deploy_world_class():
@@ -59,8 +58,7 @@ conftest.py:
 
 The hooks are `secrets_project` (the variable ./with-secrets names its
 project in), `sample()` (the service copied), `__init__` (more state),
-`gcloud_answer(args)` (gcloud's answers; `run_gcloud` keeps the call
-first), `providers()` (a `Providers` of the `sustenaut.needs` entry points and
+`providers()` (a `Providers` of the `sustenaut.needs` entry points and
 `sustenaut.walk` hooks the walk loads in place of the installed ones, or None,
 the default, for the installed), `patch(monkeypatch)` (what the walk reaches; a
 subclass patches its own packages after calling it), `context(...)` (the walk's

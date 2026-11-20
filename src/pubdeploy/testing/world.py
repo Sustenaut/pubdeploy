@@ -11,8 +11,8 @@ exception text may hold it (`world`'s teardown).
 
 A suite extends the world by subclassing `World` and naming its subclass with
 the `deploy_world_class` fixture (pubdeploy.testing's docstring): the
-variable ./with-secrets sets (`secrets_project`), more gcloud verbs
-(`gcloud_answer`), the providers the walk loads (`providers`), more patches
+variable ./with-secrets sets (`secrets_project`), the providers the walk
+loads (`providers`), more patches
 (`patch`), more state (`__init__`)."""
 
 from __future__ import annotations
@@ -389,8 +389,9 @@ class World:
     A subclass may set `secrets_project`, the variable ./with-secrets names
     its project in (pubsec 0.1's PUBKIT_SECRETS_PROJECT, later
     PUBRULES_SECRETS_PROJECT); extend `__init__` for state of its own;
-    override `gcloud_answer` for more of gcloud; and extend `patch` for more
-    of what the walk reaches."""
+    give `providers` for a stand-in provider; and extend `patch` for more
+    of what the walk reaches, and `leaked` for more of what the canary reads.
+    gcloud is no tool pubdeploy runs: a provider that runs it fakes it."""
 
     secrets_project = "PUBKIT_SECRETS_PROJECT"
 
@@ -430,8 +431,6 @@ class World:
         self.writer: Any = None  # the context's writer; the command's comes from the token
         self.answers: list[str] = []  # what is typed at the walk's prompts
         self.terminal = True
-        self.gcloud: dict[str, Any] = {"accounts": {"example-files@example-project.iam.gserviceaccount.com"},
-                                       "keys": {}, "missing": False}
         # Values that cannot hold the canary (hex, base64), which no output may hold either.
         self.values: list[str] = []
         self.plan: Any = None
@@ -482,7 +481,6 @@ class World:
         seen = [*self.outputs, json.dumps(self.journal or {}),
                 *(json.dumps(c) for c in self.calls["kubectl"]),
                 *(json.dumps(argv) for argv, _ in self.calls.get("server", [])),
-                *(json.dumps(c) for c in self.calls.get("gcloud", [])),
                 *(json.dumps(c) for c in self.calls.get("sent", []))]
         return [text for text in seen for value in [CANARY, *self.values, self.token] if value in text]
 
@@ -512,35 +510,6 @@ class World:
         monkeypatch.setattr("sys.stdin.isatty", lambda: self.terminal, raising=False)
         monkeypatch.setattr("pubdeploy.store.Heads", lambda base, tenant, token: FakeHeads(self, base, tenant, token))
 
-    def run_gcloud(self, args: list[str]) -> Ran:
-        """gcloud, as the walk runs it: the call kept, then `gcloud_answer`'s answer."""
-        self.calls.setdefault("gcloud", []).append(args)
-        return self.gcloud_answer(args)
-
-    def gcloud_answer(self, args: list[str]) -> Ran:
-        """gcloud's answers about service accounts and their keys; a key it
-        makes holds the canary in its private key. A subclass answers more
-        verbs, or answers these otherwise, before it defers to this one."""
-        if self.gcloud["missing"]:
-            return Ran(127, "", "gcloud is not installed")
-        flags = gcloud_flags(args)
-        if args[:3] == ["iam", "service-accounts", "describe"]:
-            there = args[3] in self.gcloud["accounts"]
-            return Ran(0, args[3]) if there else Ran(1, "", f"NOT_FOUND: Unknown service account {args[3]}")
-        account = flags.get("iam-account", "")
-        keys = self.gcloud["keys"].setdefault(account, [])
-        if args[3] == "list":
-            return Ran(0, "\n".join(keys) + "\n")
-        if args[3] == "create":
-            key_id = f"{len(keys) + 1:x}" * 40
-            keys.append(key_id[:40])
-            return Ran(0, json.dumps({"type": "service_account", "private_key_id": key_id[:40],
-                                      "private_key": f"-----BEGIN PRIVATE KEY-----\n{CANARY}\n-----END PRIVATE KEY-----"}))
-        if args[3] == "delete":
-            keys.remove(args[4])
-            return Ran(0, "")
-        raise AssertionError(args)
-
 
 def deployments(rendered: str) -> list[dict[str, Any]]:
     """The cluster's Deployments, as the rendered manifests make them, ready:
@@ -548,17 +517,6 @@ def deployments(rendered: str) -> list[dict[str, Any]]:
     return [{"metadata": {"name": d["metadata"]["name"]}, "spec": {"replicas": 1, "template": d["spec"]["template"]},
              "status": {"readyReplicas": 1}}
             for d in yaml.safe_load_all(rendered) if isinstance(d, dict) and d.get("kind") == "Deployment"]
-
-
-def gcloud_flags(args: list[str]) -> dict[str, str]:
-    """A gcloud call's --name=value flags, by name."""
-    return dict(a.removeprefix("--").split("=", 1) for a in args if a.startswith("--") and "=" in a)
-
-
-def key_value(key_id: str) -> str:
-    """A key as Bitwarden keeps it: base64 of its JSON."""
-    import base64  # noqa: PLC0415
-    return base64.b64encode(json.dumps({"private_key_id": key_id, "private_key": CANARY}).encode()).decode()
 
 
 def run(world: World, ctx, *argv: str) -> int:
