@@ -7,6 +7,3 @@ coverage==7.16.2
 PyYAML==6.0.3
 # A unit's machine, which machine.load runs (pyproject.toml pins the same wheel).
 python-statemachine==3.2.2
-# pubsec, whose seven need types (the ones that hold a secret's value) the
-# deploy scenarios walk, as ./pubdeploy walks with them.
-pubsec @ https://github.com/Sustenaut/pubsec/releases/download/v0.1.2/pubsec-0.1.2-py3-none-any.whl

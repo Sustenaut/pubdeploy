@@ -410,25 +410,39 @@ prints and journals what it has.
 ### Provider contract
 
 A package that offers need types under `sustenaut.needs`, such as pubsec or
-pg-backup, imports nothing of pubdeploy's. A check or a fulfil uses the walk's
-Context by these names, which are frozen for providers: changing one is a
-breaking change, said in pubdeploy's changelog, with a follow-up in each
-provider. `root`, `config`, `block`, `namespace`, `unit`, `channel`
-(`admin`, `deploy`, `plain` or `plane`), `kubectl(args, input=None)`,
-`server(args, input)`, `gh(method, path, body)`, `send(kind, name, repo,
-value, environment)`, `bitwarden_writer` (None, or `.write(name, value,
-note)`), `http_get(url, timeout)`, `env`, `now()`, `rendered()`, `offline`,
-`slug`, `zones`, `resolve(host, type)`, `values` (by Bitwarden name, bytes),
-`types`, `needs`, `results`, `sleep(seconds)` and `dispatched`.
+pg-backup, or hooks under `sustenaut.walk`, imports nothing of pubdeploy in
+its code. Its tests may import two modules of pubdeploy, and no other:
+`pubdeploy.contract`, the contract below as code (its name sets, `Need`,
+`Result` and `Ran`, and `problems(kind)` and `hook_problems(hook)`, the checks
+the walk makes of a type or a hook as it loads one, in the words it prints),
+and `pubdeploy.testing`, the deploy walk's test harness. The names are the
+contract: a provider checks what it relies on by their inclusion, not by a
+version, and a change that drops or renames one is a breaking change, said
+in pubdeploy's changelog, with a follow-up in each provider. A scenario keeps
+these lists and the module's equal.
 
-A result is any object with `state`, `summary`, `fix` and `details`, and
-optionally `fixable` and `step`. A need has `id`, `type`, `name`, `params`,
-`implied_by` and `after`. A type has `type`, `schema`, `grade`, `budget` and
-`offline`, and optionally `fulfil_budget`, `singleton`, `default_name`,
-`grade_for`, `requires`, `action`, `value`, `secret_keys`, `secret_shape`,
-`made_from`, `check` and `fulfil`. Each entry point names an instance, not a
-class. A hook under `sustenaut.walk` is a function, `prepare(ctx, plan,
-terminal)`, returning a line to print or None.
+Context: a check or a fulfil uses the walk's Context by these names: `root`,
+`config`, `block`, `namespace`, `unit`, `channel` (admin, deploy, plain or
+plane), `kubectl(args, input=None)`, `server(args, input)`, `gh(method, path,
+body)`, `send(kind, name, repo, value, environment)`, `bitwarden_writer`
+(None, or an object whose write(name, value, note) writes), `http_get(url,
+timeout)`, `env`, `now()`, `rendered()`, `offline`, `slug`, `zones`,
+`resolve(host, type)`, `values` (by Bitwarden name, bytes), `types`, `needs`,
+`results`, `sleep(seconds)` and `dispatched`.
+
+Result: a result is any object with `state`, `summary`, `fix` and `details`,
+and optionally `fixable` and `step`.
+
+Need: a need has `id`, `type`, `name`, `params`, `implied_by` and `after`.
+
+Type: a type has `type`, `schema`, `grade`, `budget`, `offline`,
+`default_name`, `depends_on`, `check` and `fulfil`, and optionally
+`fulfil_budget`, `singleton`, `grade_for`, `requires`, `action`, `value`,
+`secret_keys`, `secret_shape`, `made_from`, `serial`, `stop` and
+`stop_warning`. Each entry point names an instance, not a class.
+
+Hook: a hook under `sustenaut.walk` is a function, prepare(ctx, plan,
+terminal), returning a line to print or None.
 
 The channels: with `--server HOST` (or `SUSTENAUT_SERVER`) and no
 `--kubectl`, kubectl is `ssh root@HOST k3s kubectl`, and a command can run

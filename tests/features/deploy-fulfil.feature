@@ -219,7 +219,7 @@ Feature: pubrules deploy walk --fulfil makes what is missing, once the plan is c
     Given GitHub holds no variable "EXAMPLE_SETTING"
     When I run pubdeploy "walk" "--fulfil" "--yes"
     Then "github.variable:EXAMPLE_SETTING" is missing
-    And it prints "then pubkit variables --apply example"
+    And it prints "give EXAMPLE_SETTING its value in the owner's state file"
     And stderr does not mention "github.variable:EXAMPLE_SETTING"
 
   Scenario: A CronJob that never succeeded is run, and waited for

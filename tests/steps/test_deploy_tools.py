@@ -168,17 +168,19 @@ def within_budget(ctx, name, done):
 
 @when("the registry checks every builtin type, pubrules's own as one word")
 def builtin_checked(ctx):
-    from pubdeploy.registry import BUILTIN, type_problems  # noqa: PLC0415
+    from pubdeploy.contract import problems  # noqa: PLC0415
+    from pubdeploy.registry import BUILTIN  # noqa: PLC0415
     # pubrules's own may be one word, as upstream is.
-    ctx.attempt(lambda: [f"{kind.type}: {p}" for kind in BUILTIN for p in type_problems(kind) if "dotted" not in p])
+    ctx.attempt(lambda: [f"{kind.type}: {p}" for kind in BUILTIN for p in problems(kind) if "dotted" not in p])
 
 
 @when(parsers.parse('the registry checks the type "{name}" with a fulfil budget of {seconds:d} seconds'))
 def budget_checked(ctx, name, seconds):
-    from pubdeploy.registry import type_problems, types  # noqa: PLC0415
+    from pubdeploy.contract import problems  # noqa: PLC0415
+    from pubdeploy.registry import types  # noqa: PLC0415
     kind = type(types()[name])()
     kind.fulfil_budget = seconds
-    ctx.attempt(lambda: type_problems(kind))
+    ctx.attempt(lambda: problems(kind))
 
 
 @when('a result is made whose summary is "a", then a line of "b " and 200 "c"s')

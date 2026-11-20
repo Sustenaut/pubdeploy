@@ -47,12 +47,6 @@ STATES = {
     "over the deploy channel, before secret-keys": lambda w: setattr(w, "channel", "deploy") or
     w.cluster.update({"secret_keys_verb": False}),
     "GitHub without its secrets": lambda w: w.github.update({"secrets": set()}),
-    "a key to make": lambda w: w.block["needs"].append({
-        "type": "gcp.service-account-key", "account": "example-files", "project": "example-project",
-        "bitwarden": "example-files-key"}),
-    "a key Bitwarden refuses": lambda w: w.block["needs"].append({
-        "type": "gcp.service-account-key", "account": "example-files", "project": "example-project",
-        "bitwarden": "example-files-key"}) or setattr(w, "bitwarden_refuses", True),
     "kubectl refusing writes": lambda w: w.cluster["namespaces"]["example"]["secrets"].pop("example-files")
     and w.cluster.update({"refuse_writes": True}),
 }

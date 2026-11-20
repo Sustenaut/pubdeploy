@@ -84,7 +84,7 @@ Feature: pubrules sync --check checks pubrules.json's deploy block
   Scenario: A need of a type pubrules does not know is named, with the types it knows
     Given the deploy block also needs {"type": "example.thing", "name": "one"}
     When I check the deploy block
-    Then the only problem starts "deploy: needs[6]: example.thing is no type of need pubdeploy knows; it knows auth.sign-in-client, bitwarden.generated, bitwarden.secret,"
+    Then the only problem starts "deploy: needs[6]: example.thing is no type of need pubdeploy knows; it knows auth.sign-in-client, bitwarden.adopt, bitwarden.generated, bitwarden.secret,"
 
   Scenario: A key a need's type does not take is named, with the keys it takes
     Given the deploy block also needs {"type": "upstream", "name": "files", "health": "https://files.example.eu/healthz", "healthz": "/"}
@@ -172,23 +172,23 @@ Feature: pubrules sync --check checks pubrules.json's deploy block
     When I run pubdeploy "types"
     Then it succeeds
     And the listing shows "example.thing" graded "none", from "example-needs", taking "size?"
-    And the listing shows "k8s.secret" graded "auto", from "pubsec", taking "keys?, shapes?"
+    And the listing shows "k8s.secret" graded "auto", from "standin", taking "keys?, shapes?"
     And the listing shows "k8s.namespace" graded "auto", from "pubdeploy", taking "-"
-    And it prints "22 types; every need also takes type, name, after and unit"
+    And it prints "23 types; every need also takes type, name, after and unit"
 
   Scenario: A package offering a type pubrules has is left out, naming both
     Given the package "example-needs" offers the need type "k8s.namespace"
     When I run pubdeploy "types"
     Then it succeeds
     And stderr mentions "sustenaut.needs entry point k8s.namespace (example_needs:K8S_NAMESPACE, from example-needs) offers k8s.namespace, which pubdeploy offers too; example-needs's is left out"
-    And it prints "21 types"
+    And it prints "22 types"
 
-  Scenario: A package offering a type pubsec has is left out, naming both
+  Scenario: A package offering a type another package has is left out, naming both
     Given the package "example-needs" offers the need type "k8s.secret"
     When I run pubdeploy "types"
     Then it succeeds
-    And stderr mentions "offers k8s.secret, which pubsec offers too; example-needs's is left out"
-    And it prints "21 types"
+    And stderr mentions "offers k8s.secret, which standin offers too; example-needs's is left out"
+    And it prints "22 types"
 
   Scenario Outline: A need type a package offers is checked as it loads
     Given the package "example-needs" offers a need type whose <part> is <value>

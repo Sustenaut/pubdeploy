@@ -12,20 +12,24 @@ exception text may hold it (`world`'s teardown).
 A suite extends the world by subclassing `World` and naming its subclass with
 the `deploy_world_class` fixture (pubdeploy.testing's docstring): the
 variable ./with-secrets sets (`secrets_project`), more gcloud verbs
-(`gcloud_answer`), more patches (`patch`), more state (`__init__`)."""
+(`gcloud_answer`), the providers the walk loads (`providers`), more patches
+(`patch`), more state (`__init__`)."""
 
 from __future__ import annotations
 
 import copy
 import json
+from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from importlib.metadata import EntryPoint
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from pubdeploy.github import ApiError
-from pubdeploy.model import Context, Ran, Stop, no_server
+from pubdeploy.model import Context, Need, Ran, Stop, no_server
 from pubdeploy.testing import fixture_path
 
 CANARY = "canary-7f3e"
@@ -370,6 +374,15 @@ class FakeHeads:
         return 200
 
 
+@dataclass(frozen=True)
+class Providers:
+    """What a world's walk loads in place of the installed packages: the
+    `sustenaut.needs` entry points and the `sustenaut.walk` hooks, together,
+    so a world never mixes its types with another package's hook."""
+    needs: tuple[EntryPoint, ...] = ()
+    hooks: tuple[EntryPoint, ...] = ()
+
+
 class World:
     """One scenario's service, fakes and what came out of it.
 
@@ -473,12 +486,21 @@ class World:
                 *(json.dumps(c) for c in self.calls.get("sent", []))]
         return [text for text in seen for value in [CANARY, *self.values, self.token] if value in text]
 
+    def providers(self) -> Providers | None:
+        """The need types and walk hooks the walk loads in this world, in place
+        of the installed packages': None, the default, keeps the installed ones.
+        A suite that walks with a stand-in provider returns its entry points."""
+        return None
+
     def patch(self, monkeypatch) -> None:
         """Point what the walk reaches at the fakes, in the copied service's
-        directory: the context, the prompts, the terminal and storage. A suite
-        whose packages the walk loads (pubsec's types) patches those in its
-        own subclass, after calling this one."""
+        directory: the context, the prompts, the terminal, storage, and the
+        providers. A suite whose installed packages the walk loads patches
+        those in its own subclass, after calling this one."""
         monkeypatch.chdir(self.root)
+        if (given := self.providers()) is not None:
+            by_group = {"sustenaut.needs": list(given.needs), "sustenaut.walk": list(given.hooks)}
+            monkeypatch.setattr("pubdeploy.registry.installed", lambda group: list(by_group.get(group, [])))
         monkeypatch.setenv("PUBRULES_ANY_VERSION", "1")
 
         def context(root, config, offline, kubectl_command=None, zones_file=None, namespace=None, server=None,
@@ -566,3 +588,24 @@ def run(world: World, ctx, *argv: str) -> int:
     if "--json" in argv and outcome.stdout.strip():
         world.journal = json.loads(outcome.stdout)
     return outcome.code
+
+
+def walk_needs(world: World, needs: Iterable[Need] | None = None, types: dict[str, Any] | None = None,
+               fulfil: Iterable[str] = ()) -> dict[str, Any]:
+    """Walk `needs` (None: the world's service's, as `pubdeploy check` loads
+    them) with `types` (None: the ones the walk loads, the world's providers
+    included) in the world's context, fulfilling the needs whose ids `fulfil`
+    names, and give the deploy-journal/2 document, which the world keeps for
+    the canary."""
+    from pubdeploy import load  # noqa: PLC0415
+    from pubdeploy.registry import types as loaded  # noqa: PLC0415
+    from pubdeploy.walk import fulfil as fulfilling  # noqa: PLC0415
+    from pubdeploy.walk import walk  # noqa: PLC0415
+    context = world.context()
+    kinds = loaded() if types is None else types
+    plan = load(world.root, world.config, context).needs if needs is None else {n.id: n for n in needs}
+    journal = walk(plan, kinds, context, service={})
+    if wanted := set(fulfil):
+        journal = fulfilling(journal, kinds, context, wanted)
+    world.journal = journal.document()
+    return world.journal

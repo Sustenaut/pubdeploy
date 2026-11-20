@@ -14,8 +14,10 @@ asks either way:
 Its steps are pubtest's voice (pubtest's GRAMMAR.md), and need pubtest's
 plugin, which every suite on pubtest loads. A step that runs pubrules
 (`the example service's managed files are in step`) needs pubrules
-installed. The world patches only pubdeploy: a suite whose packages the walk
-also loads (pubsec's types) patches them in its own World's `patch`.
+installed. The world patches only pubdeploy: a suite whose installed packages
+the walk also loads (pubsec's types) patches them in its own World's `patch`,
+and a suite that walks with a stand-in provider instead returns its entry
+points from `providers()`.
 
 What it gives (`steps.py`):
 
@@ -58,10 +60,17 @@ conftest.py:
 The hooks are `secrets_project` (the variable ./with-secrets names its
 project in), `sample()` (the service copied), `__init__` (more state),
 `gcloud_answer(args)` (gcloud's answers; `run_gcloud` keeps the call
-first), `patch(monkeypatch)` (what the walk reaches; a subclass patches its own
-packages after calling it), `context(...)` (the walk's Context) and `leaked()` (what the canary
-reads). A step of the suite's own with a plugin step's text takes precedence
-over it.
+first), `providers()` (a `Providers` of the `sustenaut.needs` entry points and
+`sustenaut.walk` hooks the walk loads in place of the installed ones, or None,
+the default, for the installed), `patch(monkeypatch)` (what the walk reaches; a
+subclass patches its own packages after calling it), `context(...)` (the walk's
+Context) and `leaked()` (what the canary reads). A step of the suite's own with
+a plugin step's text takes precedence over it.
+
+`walk_needs(world, needs=None, types=None, fulfil=())` walks needs in the
+world's context, as a provider's own scenarios do with its types, and gives
+the deploy-journal/2 document as data. With these and `pubdeploy.contract`, a
+provider's suite imports nothing else of pubdeploy.
 
 `fixture_path(name)` is where a sample is, for a suite's own steps.
 """

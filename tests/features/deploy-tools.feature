@@ -221,6 +221,7 @@ Feature: The tools `pubrules deploy check` reaches outside a test's fakes
     And the file "zones.json" is removed
     And a stand-in "kustomize" that prints the file "rendered.yaml"
     And the environment sets "PUBRULES_ANY_VERSION" to "1"
+    And the program finds the stand-in provider
     When I run "pubdeploy check --offline --zones ../infra/pubrules.json"
     Then it succeeds
     And it prints "ready   k8s.secrets-declared:example"

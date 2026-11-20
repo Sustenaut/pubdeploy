@@ -281,15 +281,15 @@ def ask(prompt: str) -> str:
 # The entry-point group of the hooks a walk calls before it fulfils, such as
 # pubsec's, which asks for the Bitwarden write token and gives the walk its
 # writer: pubrules holds no write token itself.
-WALK_HOOKS = "sustenaut.walk"
+WALK_HOOKS = "sustenaut.walk"  # contract.WALK
 
 
 def prepare(ctx: Context, plan: list[tuple[str, str]], terminal: bool, points: Any = None) -> None:
     """Call each hook's prepare(ctx, plan, terminal), printing the line it
     returns. A hook that fails is said, by its name and the error's type
     alone, and the walk goes on without what it would have given."""
-    from importlib.metadata import entry_points  # noqa: PLC0415
-    for point in sorted(entry_points(group=WALK_HOOKS) if points is None else points, key=lambda p: p.name):
+    from .registry import installed  # noqa: PLC0415
+    for point in sorted(installed(WALK_HOOKS) if points is None else points, key=lambda p: p.name):
         try:
             said = point.load()(ctx, plan, terminal)
         except Exception as e:  # noqa: BLE001 - a hook's failure is said, not fatal, and holds no value
