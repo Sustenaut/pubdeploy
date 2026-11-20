@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.7.0 is released as v0.7.0 from commit dcee1d078b035ff3c0e020811d1f3428b4c07860.",
+      "content": "pubdeploy 0.8.0 is released as v0.8.0 from commit f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.7.0",
+            "0.8.0",
             "pubdeploy --version",
-            "pubdeploy 0.7.0",
-            "v0.7.0",
-            "dcee1d078b035ff3c0e020811d1f3428b4c07860"
+            "pubdeploy 0.8.0",
+            "v0.8.0",
+            "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
           ]
         ]
       },
-      "scope": "the published release v0.7.0 of pubdeploy",
+      "scope": "the published release v0.8.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "dcee1d078b035ff3c0e020811d1f3428b4c07860"
+          "revision": "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.7.0 was released on 2026-11-20 from commit dcee1d078b035ff3c0e020811d1f3428b4c07860 with these changes.",
+      "content": "pubdeploy 0.8.0 was released on 2026-11-20 from commit f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc with these changes.",
       "data": {
         "columns": [
           {
@@ -57,19 +57,19 @@
         ],
         "rows": [
           [
-            "removed",
-            "pubdeploy.testing no longer fakes gcloud, which only a provider's types run: World.run_gcloud, gcloud_answer and its gcloud state, gcloud_flags, key_value, and the service-account-key steps (live and dead keys in Bitwarden, gcloud not installed, a key given to Bitwarden, an account with no key) are gone; pubsec's suite has its own"
+            "changed",
+            "pubdeploy requires python-statemachine>=3.2.2, a floor, in place of its wheel's address and sha256: PyPI takes no dependency by URL, so this is what lets pubdeploy be uploaded there; each consumer's lock pins the version and its hashes; and each release's wheel is uploaded to PyPI as pubdeploy as well as attached to the release"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.7.0 of pubdeploy",
+      "scope": "the published release v0.8.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "dcee1d078b035ff3c0e020811d1f3428b4c07860"
+          "revision": "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
         }
       ]
     }
