@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.6.1 is released as v0.6.1 from commit 740db511e1a3d466b1e71bc54c1654ad2feede41.",
+      "content": "pubdeploy 0.7.0 is released as v0.7.0 from commit dcee1d078b035ff3c0e020811d1f3428b4c07860.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.6.1",
+            "0.7.0",
             "pubdeploy --version",
-            "pubdeploy 0.6.1",
-            "v0.6.1",
-            "740db511e1a3d466b1e71bc54c1654ad2feede41"
+            "pubdeploy 0.7.0",
+            "v0.7.0",
+            "dcee1d078b035ff3c0e020811d1f3428b4c07860"
           ]
         ]
       },
-      "scope": "the published release v0.6.1 of pubdeploy",
+      "scope": "the published release v0.7.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "740db511e1a3d466b1e71bc54c1654ad2feede41"
+          "revision": "dcee1d078b035ff3c0e020811d1f3428b4c07860"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.6.1 was released on 2026-11-20 from commit 740db511e1a3d466b1e71bc54c1654ad2feede41 with these changes.",
+      "content": "pubdeploy 0.7.0 was released on 2026-11-20 from commit dcee1d078b035ff3c0e020811d1f3428b4c07860 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,27 +57,19 @@
         ],
         "rows": [
           [
-            "added",
-            "pubdeploy.contract: the provider contract as code. CONTEXT, NEED, RESULT, RESULT_OPTIONAL, TYPE and TYPE_OPTIONAL are the names a provider may rely on, equal to README's \"Provider contract\" lists; Need, Result and Ran come from it; problems(kind) and hook_problems(hook) say what the walk says of a type or a hook it leaves out (registry.type_problems is now contract.problems). A provider's tests import pubdeploy.contract and pubdeploy.testing, and nothing else of pubdeploy"
-          ],
-          [
-            "added",
-            "pubdeploy.testing: World.providers() gives the sustenaut.needs entry points and sustenaut.walk hooks the walk loads in the world, together as a Providers, in place of the installed packages' (None, the default, keeps them); walk_needs(world, needs, types, fulfil) walks needs in the world's context and gives the deploy-journal/2 document as data"
-          ],
-          [
-            "internal",
-            "The suite walks with a stand-in provider built from pubdeploy.contract alone, and no longer installs pubsec: the scenarios that tested pubsec's own types are pubsec's"
+            "removed",
+            "pubdeploy.testing no longer fakes gcloud, which only a provider's types run: World.run_gcloud, gcloud_answer and its gcloud state, gcloud_flags, key_value, and the service-account-key steps (live and dead keys in Bitwarden, gcloud not installed, a key given to Bitwarden, an account with no key) are gone; pubsec's suite has its own"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.6.1 of pubdeploy",
+      "scope": "the published release v0.7.0 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "740db511e1a3d466b1e71bc54c1654ad2feede41"
+          "revision": "dcee1d078b035ff3c0e020811d1f3428b4c07860"
         }
       ]
     }

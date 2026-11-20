@@ -1,4 +1,0 @@
-{
-  "category": "removed",
-  "change": "pubdeploy.testing no longer fakes gcloud, which only a provider's types run: World.run_gcloud, gcloud_answer and its gcloud state, gcloud_flags, key_value, and the service-account-key steps (live and dead keys in Bitwarden, gcloud not installed, a key given to Bitwarden, an account with no key) are gone; pubsec's suite has its own"
-}
