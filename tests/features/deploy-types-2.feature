@@ -1,15 +1,14 @@
-Feature: The need types phase 2 adds: a service account key, a sign-in client, a storage tenant, a variable's entry and a CronJob
+Feature: The need types phase 2 adds: a sign-in client, a storage tenant, a variable's entry and a CronJob
   Each is checked as every need is, and fulfilled when its grade is auto:
-  gcp.service-account-key makes a key and writes it to Bitwarden, deleting
-  it from Google when that fails; auth.sign-in-client drives register-app.py
+  auth.sign-in-client drives register-app.py
   on the server; storage.tenant and github.variable-entry propose the entry
-  to add; k8s.cronjob runs a Job from the CronJob. No value is shown: a key
-  is named by six characters of its id, and every fake value holds a canary.
+  to add; k8s.cronjob runs a Job from the CronJob. No value is shown: every
+  fake value holds a canary. (pubsec's gcp.service-account-key is pubsec's to test.)
 
   Background:
     Given the example service
 
-  # --- gcp.service-account-key -------------------------------------------------
+  # --- auth.sign-in-client -------------------------------------------------------
 
   Scenario: A registered client whose Secret has both keys is ready
     Given the service signs in with a client of example.eu

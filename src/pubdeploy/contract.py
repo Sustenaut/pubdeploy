@@ -24,8 +24,8 @@ from typing import Any
 
 from .model import GRADES, STATES, Need, Ran, Result
 
-__all__ = ["CONTEXT", "GRADES", "GROUPS", "HOOK", "LONGEST", "LONGEST_FULFIL", "NEED", "RESULT",
-           "RESULT_OPTIONAL", "STATES", "TYPE", "TYPE_OPTIONAL", "Need", "Ran", "Result", "hook_problems",
+__all__ = ["CONTEXT", "GRADES", "GROUPS", "HOOK", "LONGEST", "LONGEST_FULFIL", "NEED", "NEEDS", "RESULT",
+           "RESULT_OPTIONAL", "STATES", "TYPE", "TYPE_OPTIONAL", "WALK", "Need", "Ran", "Result", "hook_problems",
            "problems"]
 
 NEEDS, WALK = "sustenaut.needs", "sustenaut.walk"

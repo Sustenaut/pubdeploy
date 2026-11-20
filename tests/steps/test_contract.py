@@ -9,9 +9,10 @@ from dataclasses import fields
 from pathlib import Path
 
 import standin_provider
-from pytest_bdd import parsers, scenarios, when
+from pytest_bdd import parsers, scenarios, then, when
 
 from pubdeploy import contract
+from pubdeploy.testing.world import walk_needs
 
 scenarios("contract.feature")
 
@@ -101,3 +102,15 @@ def bad_hook(ctx, kind):
 def no_pubsec(ctx):
     ctx.attempt(lambda: [f"{path.relative_to(TESTS)}: {line.strip()}" for path in sorted(TESTS.rglob("*.py"))
                          for line in path.read_text().splitlines() if re.match(r"\s*(from|import)\s+pubsec\b", line)])
+
+
+@when(parsers.parse('the world\'s needs are walked with the stand-in\'s types, fulfilling "{need_id}"'))
+def walked(ctx, world, need_id):
+    """The world's providers are the stand-in's, so the types the walk loads are its."""
+    ctx.attempt(lambda: walk_needs(world, fulfil=[need_id]))
+
+
+@then(parsers.parse('the walked need "{need_id}" is ready, fulfilled'))
+def walked_ready(ctx, need_id):
+    entry = next(n for n in ctx.outcome.value["needs"] if n["id"] == need_id)
+    assert (entry["state"], entry["fulfilled"]) == ("ready", True), entry

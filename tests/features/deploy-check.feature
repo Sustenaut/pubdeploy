@@ -124,6 +124,15 @@ Feature: pubrules deploy check walks every need, and changes nothing
     Then "bitwarden.secret:example-files-token" is ready
     And it prints "over its budget of 0.2 s"
 
+  Scenario: kubectl that may not read is unknown, and says what access is missing
+    Given kubectl may not read anything
+    When I run pubdeploy "check"
+    Then the exit code is 1
+    And "k8s.namespace:example" is unknown
+    And it prints "kubectl may not read namespaces in example"
+    And it prints "use a kubeconfig that may get namespaces in example"
+    And "k8s.secret:example-files" is unknown
+
   Scenario: kubectl that is not installed is unknown
     Given kubectl is not installed
     When I run pubdeploy "check"

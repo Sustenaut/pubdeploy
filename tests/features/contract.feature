@@ -45,3 +45,11 @@ Feature: The provider contract
   Scenario: The suite imports nothing of pubsec
     When this suite's imports of pubsec are gathered
     Then the result is empty
+
+  Scenario: walk_needs walks the world's needs and fulfils those it is given
+    Given the example service
+    And the Secret "example-files" is not in the cluster
+    When the world's needs are walked with the stand-in's types, fulfilling "k8s.secret:example-files"
+    Then the result's "schema" is "deploy-journal/2"
+    And the walked need "k8s.secret:example-files" is ready, fulfilled
+    And no output holds a value
