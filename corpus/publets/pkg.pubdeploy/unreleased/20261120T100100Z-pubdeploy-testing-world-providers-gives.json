@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "pubdeploy.testing: World.providers() gives the sustenaut.needs entry points and sustenaut.walk hooks the walk loads in the world, together as a Providers, in place of the installed packages' (None, the default, keeps them); walk_needs(world, needs, types, fulfil) walks needs in the world's context and gives the deploy-journal/2 document as data"
-}

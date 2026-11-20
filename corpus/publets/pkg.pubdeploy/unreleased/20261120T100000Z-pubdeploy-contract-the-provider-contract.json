@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "pubdeploy.contract: the provider contract as code. CONTEXT, NEED, RESULT, RESULT_OPTIONAL, TYPE and TYPE_OPTIONAL are the names a provider may rely on, equal to README's \"Provider contract\" lists; Need, Result and Ran come from it; problems(kind) and hook_problems(hook) say what the walk says of a type or a hook it leaves out (registry.type_problems is now contract.problems). A provider's tests import pubdeploy.contract and pubdeploy.testing, and nothing else of pubdeploy"
-}

@@ -1,4 +1,0 @@
-{
-  "category": "internal",
-  "change": "The suite walks with a stand-in provider built from pubdeploy.contract alone, and no longer installs pubsec: the scenarios that tested pubsec's own types are pubsec's"
-}
