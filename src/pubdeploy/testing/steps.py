@@ -23,7 +23,7 @@ from pubdeploy import load
 from pubdeploy.model import Result, Stop
 from pubdeploy.schema import journal_schema, problems, validate
 from pubdeploy.testing import fixture_path
-from pubdeploy.testing.world import CANARY, NOW, World, key_value, run
+from pubdeploy.testing.world import CANARY, NOW, World, run
 
 
 def value_of(text: str):
@@ -849,35 +849,6 @@ def job_made(world, name):
 
 
 # --- the phase 2 types ------------------------------------------------------------------------------
-
-
-@given(parsers.parse('Bitwarden holds "{name}" as the live key "{key_id}" of "{account}"'))
-def live_key(world, name, key_id, account):
-    world.env[env_name(name)] = key_value(key_id)
-    world.values.append(world.env[env_name(name)])
-    world.gcloud["keys"][account] = [key_id]
-
-
-@given(parsers.parse('Bitwarden holds "{name}" as a key "{key_id}" the account does not have'))
-def dead_key(world, name, key_id):
-    world.env[env_name(name)] = key_value(key_id)
-    world.values.append(world.env[env_name(name)])
-
-
-@given("gcloud is not installed")
-def no_gcloud(world):
-    world.gcloud["missing"] = True
-
-
-@then(parsers.parse('Bitwarden was given "{name}" as a key of "{account}"'))
-def given_key(world, name, account):
-    key = json.loads(base64.b64decode(world.written[name]))
-    assert key["private_key_id"] in world.gcloud["keys"][account] and CANARY in key["private_key"]
-
-
-@then(parsers.parse('"{account}" has no key'))
-def no_key(world, account):
-    assert world.gcloud["keys"].get(account) == [], world.gcloud["keys"]
 
 
 @given("the service signs in with a client of example.eu")
