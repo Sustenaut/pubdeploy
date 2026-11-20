@@ -1,4 +1,0 @@
-{
-  "category": "changed",
-  "change": "pubdeploy requires python-statemachine>=3.2.2, a floor, in place of its wheel's address and sha256: PyPI takes no dependency by URL, so this is what lets pubdeploy be uploaded there; each consumer's lock pins the version and its hashes; and each release's wheel is uploaded to PyPI as pubdeploy as well as attached to the release"
-}
