@@ -116,3 +116,17 @@ Feature: The needs a deploy block implies, and the order they are walked in
     When I load the plan
     Then the plan has 1 "k8s.secret:example-page-secrets"
     And the need "k8s.secret:example-page-secrets" was implied by "secret of bitwarden.generated:example-cookie-secret"
+
+  Scenario: A variable the variables block gives a default carries it to pubsec
+    Given pubrules.json's variables block gives EXAMPLE_SETTING the default "120"
+    When I load the plan
+    Then "github.variable:EXAMPLE_SETTING" has the params {"declared": true, "default": "120"}
+
+  Scenario: A default may be null, or any JSON
+    Given pubrules.json's variables block gives EXAMPLE_SETTING the default null
+    When I load the plan
+    Then "github.variable:EXAMPLE_SETTING" has the params {"declared": true, "default": null}
+
+  Scenario: A variable without a default is declared, as before
+    When I load the plan
+    Then "github.variable:EXAMPLE_SETTING" has the params {"declared": true}

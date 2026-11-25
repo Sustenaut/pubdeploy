@@ -128,6 +128,12 @@ def github_app(world, app):
                                   for slot in ("id", "installation_id", "key")}
 
 
+@given(parsers.parse("pubrules.json's variables block gives {name} the default {value}"))
+def variable_default(world, name, value):
+    block = world.config["variables"]
+    block.update(version=2, defaults={**block.get("defaults", {}), name: value_of(value)})
+
+
 @given(parsers.parse('the secrets block sends only "{to}"'))
 def only_secret(world, to):
     world.config["secrets"] = [e for e in world.config["secrets"] if e["to"] == to]
@@ -324,6 +330,11 @@ def comes_after(world, later, earlier):
 def has_keys(world, need_id, keys, shape, key):
     params = plan(world).needs[need_id].params
     assert params["keys"] == keys.split(", ") and params["shapes"] == {key: shape}, params
+
+
+@then(parsers.parse('"{need_id}" has the params {params}'))
+def has_params(world, need_id, params):
+    assert plan(world).needs[need_id].params == value_of(params), plan(world).needs[need_id].params
 
 
 @then(parsers.parse('the need "{need_id}" was implied by "{by}"'))
