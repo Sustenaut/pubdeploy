@@ -3,8 +3,8 @@
     PUBDEPLOY_RUN_TOKEN=... pubdeploy executor --engine URL --run ID [--journal URL]
 
 What the engine's in-process executor does, from wherever this runs (a Job in the
-service's namespace): it reads the run (GET URL/runs/ID, the run's own token as its
-bearer), walks each need once every need it comes after has ended, as many at once as the
+service's namespace): it reads the run (GET URL/runs/ID/executor, the run's own token as
+its bearer), walks each need once every need it comes after has ended, as many at once as the
 run's machine allows (its `parallel`), and reports each move as one event (POST
 URL/runs/ID/events), numbered by the need's own sequence, so a re-post after a lost
 answer is the same event and the engine keeps it once.
@@ -71,8 +71,8 @@ class Engine(Protocol):
 
 
 class HttpEngine:
-    """The engine's run, over HTTP: GET URL/runs/ID and POST URL/runs/ID/events, the run's token
-    as the bearer. A 5xx or no answer is tried again after a longer wait; a 4xx is refused."""
+    """The engine's run, over HTTP: GET URL/runs/ID/executor and POST URL/runs/ID/events, the
+    run's token as the bearer. A 5xx or no answer is tried again after a longer wait; a 4xx is refused."""
 
     def __init__(self, url: str, run: str, token: str, *, opener: Callable[..., Any] = urllib.request.urlopen,
                  sleep: Callable[[float], None] = time.sleep, tries: int = TRIES, timeout: float = 30.0):
@@ -80,7 +80,7 @@ class HttpEngine:
         self.token, self.opener, self.sleep, self.tries, self.timeout = token, opener, sleep, tries, timeout
 
     def run(self) -> dict[str, Any]:
-        return self._call(urllib.request.Request(self.base, headers=self._headers()))
+        return self._call(urllib.request.Request(f"{self.base}/executor", headers=self._headers()))
 
     def post(self, event: dict[str, Any]) -> dict[str, Any]:
         return self._call(urllib.request.Request(f"{self.base}/events", data=json.dumps(event).encode(),

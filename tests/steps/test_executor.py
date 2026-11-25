@@ -470,3 +470,10 @@ def judge(a, stdout):
 @then(parsers.parse('the need is judged "{state}", saying "{said}"'))
 def judged_as(judged, state, said):
     assert judged == (state, said)
+
+
+@then(parsers.parse('it read the run at "{url}" with the run\'s token'))
+def read_at(http, url):
+    first = http["calls"][0]
+    assert first.full_url == url and first.get_method() == "GET"
+    assert first.get_header("Authorization") == "Bearer run-token"

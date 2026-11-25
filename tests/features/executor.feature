@@ -104,6 +104,7 @@ Feature: A live run's needs, walked by pubdeploy's executor outside the converge
     When the executor walks the run over HTTP
     Then it exits 3
     And it said "403 not-this-runs-executor"
+    And it read the run at "http://engine/runs/r1/executor" with the run's token
 
   Scenario: A walk is never given the run's token
     Given a running run with the need "a"

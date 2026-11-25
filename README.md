@@ -411,7 +411,7 @@ prints and journals what it has.
 
 **`pubdeploy executor --engine URL --run ID`** walks a live run's needs outside the
 convergence engine: what a run's Job runs, with the run's token in `PUBDEPLOY_RUN_TOKEN`
-(never passed on to a walk). It reads the run (`GET URL/runs/ID`), walks each need as the
+(never passed on to a walk). It reads the run (`GET URL/runs/ID/executor`), walks each need as the
 engine's own executor does (`walk --need`, its fulfil when it is found and fulfils, as many
 at once as the run's `parallel`, a need after one not ready blocked) and posts each move to
 `URL/runs/ID/events`, numbered by the need's own sequence, so a re-post after a lost answer
