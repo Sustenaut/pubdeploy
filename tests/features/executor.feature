@@ -68,6 +68,22 @@ Feature: A live run's needs, walked by pubdeploy's executor outside the converge
     And "later" ended "stopped", saying "before it started"
     And it exits 0
 
+  Scenario: A Stop pressed while a need is checked, which then finds it missing, stops it before its fulfil
+    Given a running run with the need "a"
+    And the check of "a" finds it missing just as a person presses Stop
+    When the executor walks the run
+    Then "a" moved waiting, checking, found, stopped
+    And "a" ended "stopped", saying "stopped before its fulfil"
+    And no walk was given --fulfil
+    And it exits 0
+
+  Scenario: A need that continues on Stop goes on to its fulfil when its check finds it missing after a Stop
+    Given a running run with the need "a" that continues
+    And the check of "a" finds it missing only once a person has pressed Stop, and its fulfil leaves it ready
+    When the executor walks the run, and a person presses Stop while "a" is checked
+    Then "a" moved waiting, checking, found, fulfilling, checking, ready
+    And it exits 0
+
   Scenario: A person cancels a need that continues on Stop, by its name
     Given a running run with the needs "cont" that continues, and "other"
     And every walk waits until it is told to end

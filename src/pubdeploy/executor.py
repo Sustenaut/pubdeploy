@@ -303,9 +303,12 @@ class Executor:
         try:
             self._post(need, "checking")
             state, said = self._walk(need, fulfil=False)
-            if state == "found" and need.fulfils and not self.stopping:
+            if state == "found" and need.fulfils:
                 self._post(need, "found", said)
-                self._post(need, "fulfilling")
+                if self.stopping and need.stop != "continue":  # a Stop between its check and its fulfil
+                    self._post(need, "stopped", "stopped before its fulfil")
+                    return
+                self._post(need, "fulfilling")  # continue ignores a Stop; only its cancel ends it
                 state, said = self._walk(need, fulfil=True)
                 if state == "found":  # the fulfil ran and left it as it was
                     self._post(need, "failed", f"still found after its fulfil: {said}", ok=False)

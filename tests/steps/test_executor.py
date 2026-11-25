@@ -81,6 +81,11 @@ class Proc:
                 self.ended = (1, "", "Traceback\nboom")
             elif self.outcome == "wait" and self.world.release.is_set():
                 self.ended = (0, journal(self.name, "ready"), "")
+            elif self.outcome == "missing-as-stopped":  # the Stop lands between the check and its fulfil
+                self.world.ex.stopping = True
+                self.ended = (0, journal(self.name, "missing"), "")
+            elif self.outcome == "missing-after-stop" and self.world.ex.stopping:
+                self.ended = (0, journal(self.name, "missing"), "")
         if self.ended is not None and self.record["end"] is None:
             self.record["end"] = time.monotonic()
         return self.ended
@@ -228,8 +233,9 @@ def token_set(world):
 
 
 def walk(world, during=None):
-    ex = executor.Executor(world.engine, world_root(), spawn=world.spawn, env=world.env or {"PATH": "/usr/bin"},
-                           poll=0.03, grace=0.0, slice_=0.01, log=world.said.append)
+    ex = world.ex = executor.Executor(world.engine, world_root(), spawn=world.spawn,
+                                      env=world.env or {"PATH": "/usr/bin"}, poll=0.03, grace=0.0, slice_=0.01,
+                                      log=world.said.append)
     if during is not None:
         threading.Thread(target=during, daemon=True).start()
     world.code = ex.run()
@@ -477,3 +483,27 @@ def read_at(http, url):
     first = http["calls"][0]
     assert first.full_url == url and first.get_method() == "GET"
     assert first.get_header("Authorization") == "Bearer run-token"
+
+
+@given(parsers.parse('a running run with the need "{a}" that continues'))
+def one_continues(world, a):
+    world.add(a, stop="continue")
+
+
+@given(parsers.parse('the check of "{a}" finds it missing just as a person presses Stop'))
+def missing_as_stopped(world, a):
+    world.outcomes[(a, False)] = "missing-as-stopped"
+
+
+@given(parsers.parse('the check of "{a}" finds it missing only once a person has pressed Stop, '
+                     'and its fulfil leaves it ready'))
+def missing_after_stop(world, a):
+    world.outcomes[(a, False)], world.outcomes[(a, True)] = "missing-after-stop", "ready"
+
+
+@when(parsers.parse('the executor walks the run, and a person presses Stop while "{a}" is checked'))
+def walks_stop_during_check(world, a):
+    def stop():
+        until(lambda: world.walking() == 1)
+        world.stopping = True
+    walk(world, stop)
