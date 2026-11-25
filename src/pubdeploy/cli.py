@@ -82,8 +82,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--modes", metavar="ID=MODE,...", default="", help="a need's own mode, over --mode")
     p = commands.add_parser("executor", help="walk a live run's needs outside the convergence engine, reporting "
                                              "each move to it: what a run's Job runs")
-    p.add_argument("--engine", metavar="URL", required=True, help="the convergence engine, such as "
-                                                                  "http://convergence.convergence.svc:8080")
+    p.add_argument("--engine", metavar="URL", required=True, help="the convergence engine's address, as the "
+                                                                  "run's Job reaches it")
     p.add_argument("--run", metavar="ID", required=True, help="the run's id")
     p.add_argument("--journal", metavar="URL", default="", help="also write each walk's journal to storage")
     p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubrules sync runs")
