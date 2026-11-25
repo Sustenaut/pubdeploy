@@ -1,4 +1,0 @@
-{
-  "category": "added",
-  "change": "A name the variables block (version 2) gives a default is a github.variable need with that default as its default param, so pubsec (with Sustenaut/pubsec#45) finds it ready unset; a name without one is declared, as before"
-}
