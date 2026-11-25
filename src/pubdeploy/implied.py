@@ -9,7 +9,8 @@ Derived in this order, each with `implied_by` saying where it came from:
     secrets             a github.secret or github.variable per entry, and
                         github.deploy-settings when one is the server's
     github_app          a github.secret or github.variable per slot
-    variables           a github.variable per name, which must be set
+    variables           a github.variable per name, which must be set unless
+                        the block's defaults give it one (passed as default)
     a need's secret     the k8s.secret it fills
     the manifests       a k8s.secret per Secret they read
 
@@ -129,9 +130,17 @@ def build(config: dict[str, Any], types: dict[str, NeedType], root: Any = None, 
             out.add("github.deploy-settings", ns, {}, "secrets")
     variables = config.get("variables")
     if isinstance(variables, dict) and isinstance(variables.get("names"), list):
+        # Version 2 of the block (pubrules 0.49.1) gives a name its code's
+        # default, any JSON value, null too: pubsec's github.variable is then
+        # ready with the variable unset, as the code reads "" as unset too.
+        defaults = variables.get("defaults")
+        defaults = defaults if isinstance(defaults, dict) else {}
         for name in variables["names"]:
             if isinstance(name, str):
-                out.add("github.variable", name, {"declared": True}, "variables")
+                params: dict[str, Any] = {"declared": True}
+                if name in defaults:
+                    params["default"] = defaults[name]
+                out.add("github.variable", name, params, "variables")
 
     for need in explicit:
         secret = need.params.get("secret")

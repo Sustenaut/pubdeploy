@@ -221,7 +221,9 @@ twice: the namespace a `k8s.namespace`, a `deploy.rollout` and a
 `k8s.secrets-declared`, the host a `dns.site` and a `service.health`, the gate
 a `github.gate`; each entry of `secrets` and `github_app` a `github.secret` or
 `github.variable`, and the server's settings a `github.deploy-settings`; each
-of `variables.names` a `github.variable` that must be set; each need's
+of `variables.names` a `github.variable` that must be set, unless
+`variables.defaults` (version 2 of the block) gives it a default, which the need
+carries as `default`, so pubsec finds it ready unset; each need's
 `secret`, and each Secret the rendered overlay reads, a `k8s.secret`.
 `k8s.secrets-declared` holds the manifests and the needs to each other, and,
 when the walk reads the cluster (not offline, not over the deploy channel), says
