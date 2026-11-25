@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.8.0 is released as v0.8.0 from commit f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc.",
+      "content": "pubdeploy 0.8.1 is released as v0.8.1 from commit 70e71c4c2788f93b08e9439d380f583f2bdbcce6.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.8.0",
+            "0.8.1",
             "pubdeploy --version",
-            "pubdeploy 0.8.0",
-            "v0.8.0",
-            "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
+            "pubdeploy 0.8.1",
+            "v0.8.1",
+            "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
           ]
         ]
       },
-      "scope": "the published release v0.8.0 of pubdeploy",
+      "scope": "the published release v0.8.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
+          "revision": "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.8.0 was released on 2026-11-20 from commit f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc with these changes.",
+      "content": "pubdeploy 0.8.1 was released on 2026-11-25 from commit 70e71c4c2788f93b08e9439d380f583f2bdbcce6 with these changes.",
       "data": {
         "columns": [
           {
@@ -57,24 +57,24 @@
         ],
         "rows": [
           [
-            "changed",
-            "pubdeploy requires python-statemachine>=3.2.2, a floor, in place of its wheel's address and sha256: PyPI takes no dependency by URL, so this is what lets pubdeploy be uploaded there; each consumer's lock pins the version and its hashes; and each release's wheel is uploaded to PyPI as pubdeploy as well as attached to the release"
+            "added",
+            "A name the variables block (version 2) gives a default is a github.variable need with that default as its default param, so pubsec (with Sustenaut/pubsec#45) finds it ready unset; a name without one is declared, as before"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.8.0 of pubdeploy",
+      "scope": "the published release v0.8.1 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "f8a6df119a2ff0b4960f4fb81e67a0963d4b48cc"
+          "revision": "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
         }
       ]
     }
   },
-  "created": "2026-11-20T00:00:00Z",
+  "created": "2026-11-25T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
