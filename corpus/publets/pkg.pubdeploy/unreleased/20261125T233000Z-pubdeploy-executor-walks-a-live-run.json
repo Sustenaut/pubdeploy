@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "pubdeploy executor --engine URL --run ID walks a live run's needs outside the convergence engine (live runs step 4, what a run's Job runs): it reads the run with the run's token (PUBDEPLOY_RUN_TOKEN), walks each need with walk --need as the engine's executor does, as many at once as the run's parallel, posts each move as an event numbered by the need's own sequence (re-posted after a 5xx), reads the run every 5 s for a Stop and cancels and acts on each walking need by its stop class, and exits 0, 3 (refused) or 1 (unreachable) after posting its exit"
+}
