@@ -409,6 +409,19 @@ fulfil at S seconds: what is left of a run's time. A live run's Stop for a need 
 `SIGUSR1`: what is running ends at once as unknown ("a Stop shortened it"), and the walk
 prints and journals what it has.
 
+**`pubdeploy executor --engine URL --run ID`** walks a live run's needs outside the
+convergence engine: what a run's Job runs, with the run's token in `PUBDEPLOY_RUN_TOKEN`
+(never passed on to a walk). It reads the run (`GET URL/runs/ID/executor`), walks each need as the
+engine's own executor does (`walk --need`, its fulfil when it is found and fulfils, as many
+at once as the run's `parallel`, a need after one not ready blocked) and posts each move to
+`URL/runs/ID/events`, numbered by the need's own sequence, so a re-post after a lost answer
+(a 5xx or none, tried again after a longer wait) is the same event. Every 5 s it reads the
+run again for a Stop and for needs cancelled by name, and acts on each walking need as its
+stop class says. Each walk is a process of its own, so a Stop reaches one need's walk
+(terminate, or `SIGUSR1` to shorten it). It exits 0 once every need has ended, 3 when the
+engine refuses it and 1 when the engine cannot be reached, after posting its exit
+(`{"executor_exit": CODE}`).
+
 ### Provider contract
 
 A package that offers need types under `sustenaut.needs`, such as pubsec or

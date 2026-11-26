@@ -9,6 +9,9 @@ and making it; and the checks a deploy to Kubernetes runs.
     pubdeploy check ...                  walk without --fulfil
     pubdeploy machine [--unit U] [--mode check|fulfil] [--modes ID=MODE,...]
                                          the unit's needs as a state machine (XState JSON)
+    pubdeploy executor --engine URL --run ID [--journal URL]
+                                         walk a live run's needs, reporting each move to the
+                                         convergence engine (the run's token: PUBDEPLOY_RUN_TOKEN)
     pubdeploy types                      every need type, and its keys
     pubdeploy k8s preflight|diagnose     before an apply, and after a failed rollout
     pubdeploy sync-check [--check]       what `pubrules sync` runs of pubdeploy's
@@ -77,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--unit", metavar="NAME", help="the unit; needed when the block has several")
     p.add_argument("--mode", choices=("check", "fulfil"), help="every need in this mode")
     p.add_argument("--modes", metavar="ID=MODE,...", default="", help="a need's own mode, over --mode")
+    p = commands.add_parser("executor", help="walk a live run's needs outside the convergence engine, reporting "
+                                             "each move to it: what a run's Job runs")
+    p.add_argument("--engine", metavar="URL", required=True, help="the convergence engine's address, as the "
+                                                                  "run's Job reaches it")
+    p.add_argument("--run", metavar="ID", required=True, help="the run's id")
+    p.add_argument("--journal", metavar="URL", default="", help="also write each walk's journal to storage")
     p = commands.add_parser("sync-check", help="the deploy block's offline check: what pubrules sync runs")
     p.add_argument("--check", action="store_true", help="fail when the deploy block is wrong")
     commands.add_parser("bump", help="move deploy.providers and the uses of pubdeploy's workflows to the "
@@ -97,6 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         from . import run_machine  # noqa: PLC0415
         modes = dict(pair.split("=", 1) for pair in args.modes.split(",") if "=" in pair)
         return run_machine(root, args.unit, args.mode, modes)
+    if args.command == "executor":
+        from .executor import main as executor  # noqa: PLC0415
+        return executor(args.engine, args.run, args.journal, root)
     if args.command == "bump":
         from .hooks import bump  # noqa: PLC0415
         for line in bump(root):
