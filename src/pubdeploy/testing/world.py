@@ -32,6 +32,9 @@ from pubdeploy.github import ApiError
 from pubdeploy.model import Context, Need, Ran, Stop, no_server
 from pubdeploy.testing import fixture_path
 
+# How a walk lists a namespace's Secrets: names, types and owners, never their values.
+COLUMNS = "custom-columns=NAME:.metadata.name,TYPE:.type,OWNER:.metadata.ownerReferences[0].kind"
+
 CANARY = "canary-7f3e"
 FIXTURE = fixture_path("deploy-app")
 SLUG = "example-org/example"
@@ -115,10 +118,12 @@ class FakeKubectl:
         kind = rest[0]
         name = rest[1] if len(rest) > 1 else None
         if kind == "secrets" and "--no-headers" in rest:
-            # The namespace's Secrets as custom columns, names and types: asked for any other
+            # The namespace's Secrets as custom columns, names, types and owners: asked for any other
             # way, the walk would hold their values, which it never may.
-            assert "--no-headers" in raw and "custom-columns=NAME:.metadata.name,TYPE:.type" in raw, raw
-            return Ran(0, "".join(f"{n}   Opaque\n" for n in sorted((space or {}).get("secrets", {}))))
+            assert "--no-headers" in raw and COLUMNS in raw, raw
+            owned = (space or {}).get("owned", {})
+            return Ran(0, "".join(f"{n}   Opaque   {owned.get(n, '<none>')}\n"
+                                  for n in sorted((space or {}).get("secrets", {}))))
         if kind in ("deployment", "job") and name is None:
             return Ran(0, json.dumps({"items": (space or {}).get(kind, [])}))
         if "/" in kind:

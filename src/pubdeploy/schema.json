@@ -4,7 +4,7 @@
   "title": "pubrules.json's deploy block",
   "description": "What a service needs before it deploys. Each need's own keys are its type's schema (pubdeploy types).",
   "type": "object",
-  "x-phrase": "must be an object, with namespace and maybe host, workflow, gate, overlay, units, providers and needs",
+  "x-phrase": "must be an object, with namespace and maybe host, workflow, gate, overlay, executor, units, providers and needs",
   "required": [
     "namespace"
   ],
@@ -40,8 +40,13 @@
       "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[A-Za-z0-9_./-]+$",
       "x-phrase": "must be a directory in the repository, such as k8s"
     },
+    "executor": {
+      "description": "false for a unit no live run's Job walks (the engine's own namespace): its needs then need no Secret pubdeploy-executor's BWS_ACCESS_TOKEN.",
+      "const": false,
+      "x-phrase": "must be false, for a unit no live run's Job walks"
+    },
     "units": {
-      "description": "More units, by name, each its own namespace, overlay, gate and host; a need's unit scopes it to one.",
+      "description": "More units, by name, each its own namespace, overlay, gate, host and executor; a need's unit scopes it to one.",
       "type": "object",
       "x-phrase": "must be an object of units, by name",
       "additionalProperties": {
@@ -51,7 +56,7 @@
         ],
         "additionalProperties": false,
         "x-name": "a unit",
-        "x-phrase": "must be an object, with namespace and maybe overlay, gate and host",
+        "x-phrase": "must be an object, with namespace and maybe overlay, gate, host and executor",
         "properties": {
           "namespace": {
             "$ref": "#/properties/namespace"
@@ -64,6 +69,9 @@
           },
           "host": {
             "$ref": "#/properties/host"
+          },
+          "executor": {
+            "$ref": "#/properties/executor"
           }
         }
       }

@@ -3,7 +3,9 @@ imports nothing of the walk:
 
 - `sustenaut.sync`, `check(root, config, check) -> (lines, failed)`: the deploy
   block's offline check (the block and its needs, the manifests against
-  them, the units against the deploy workflow). It seeds no scheduled walk:
+  them, the units against the deploy workflow), and each unit's need filling
+  the Secret its live runs' Job reads Bitwarden with, which `sync` adds
+  (executor_secret.py). It seeds no scheduled walk:
   the convergence engine walks every deploy service, and a repository's own
   deploy-check.yml caller, where one is left, is its own to remove. `pubrules sync` calls it after its own work, and
   `--check` fails when it says so. `pubdeploy sync-check` runs it alone.
@@ -28,9 +30,11 @@ def check(root: Path, config: dict[str, Any], check: bool) -> tuple[list[str], b
     if BLOCK not in config:
         return [], False
     from . import offline_lines  # noqa: PLC0415
+    from .executor_secret import ensure  # noqa: PLC0415
+    added, unfilled, config = ensure(root, config, check)
     lines, failed = offline_lines(root, config)
     # Writing, a disagreement is said and fails nothing, as pubrules sync goes on.
-    return lines, check and failed
+    return added + lines, check and (failed or unfilled)
 
 
 # A use of pubdeploy's reusable workflows, by commit with the version in a

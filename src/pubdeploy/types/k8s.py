@@ -21,6 +21,7 @@ from typing import Any
 import yaml
 
 from .. import k8s
+from ..executor_secret import ACCOUNT as EXECUTOR
 from ..model import Context, Need, Result, Stop
 from . import Base, failed, kubectl_json, kubectl_refused, last_success, not_found, run_job, schema
 
@@ -122,7 +123,7 @@ class SecretsDeclared(Base):
                         lines.append(f"Secret {name} key {key} is read by {r.where}, and "
                                      f"{', '.join(i for i, _ in fillers)} provides only {', '.join(sorted(provided))}")
         for name, fillers in sorted(declared.items()):
-            if name not in reads:
+            if name not in reads and name != EXECUTOR:  # the live runs' Job reads that one, not the manifests'
                 lines.append(f"Secret {name} is declared by {', '.join(i for i, _ in fillers)} but nothing reads it")
         count = len([n for n, refs in reads.items() if n not in held and any(not r.optional for r in refs)])
         left = leftovers(ctx, set(reads) | set(declared) | held)
@@ -141,16 +142,18 @@ def leftovers(ctx: Context, known: set[str]) -> list[str]:
     """The Opaque Secrets in the namespace that nothing reads or declares: one a need
     filled before the need went, say a key's once its service reaches Google without
     one. None when the walk is offline or kubectl may not list them (the check stands
-    on the manifests alone then)."""
+    on the manifests alone then). A Secret another object owns goes with its owner, so
+    it is no leftover: a live run's token, which its Job owns."""
     if ctx.offline or ctx.channel == "deploy":
         return []
     # Names and types alone: no Secret's data reaches the walk, nor crosses the admin channel.
     ran = ctx.kubectl(["-n", ctx.namespace, "get", "secrets", "--no-headers",
-                       "-o", "custom-columns=NAME:.metadata.name,TYPE:.type"])
+                       "-o", "custom-columns=NAME:.metadata.name,TYPE:.type,OWNER:.metadata.ownerReferences[0].kind"])
     if ran.returncode != 0:
         return []
     rows = [line.split() for line in ran.stdout.splitlines()]
-    return sorted(row[0] for row in rows if len(row) == 2 and row[1] == "Opaque" and row[0] not in known)
+    return sorted(row[0] for row in rows if len(row) == 3 and row[1] == "Opaque" and row[2] == "<none>"
+                  and row[0] not in known)
 
 
 class Manifests(Base):

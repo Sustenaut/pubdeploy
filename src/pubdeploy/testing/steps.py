@@ -462,6 +462,12 @@ def leftover_secret(world, secret):
     namespace(world)["secrets"][secret] = {"key.json": f"{CANARY}-key".encode()}
 
 
+@given(parsers.parse('the cluster holds the Secret "{secret}", which a {kind} owns'))
+def owned_secret(world, secret, kind):
+    namespace(world)["secrets"][secret] = {"token": f"{CANARY}-token".encode()}
+    namespace(world).setdefault("owned", {})[secret] = kind
+
+
 @given(parsers.parse('the Secret "{secret}" is not in the cluster'))
 def no_secret(world, secret):
     del namespace(world)["secrets"][secret]

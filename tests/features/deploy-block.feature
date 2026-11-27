@@ -57,12 +57,13 @@ Feature: pubrules sync --check checks pubrules.json's deploy block
       | needs     | {"type": "upstream"}                     | deploy: needs must be a list of needs, each an object with a type                            |
       | needs     | [{"name": "storage"}]                    | deploy: needs[0]: type is missing                                                            |
       | needs     | ["upstream"]                             | deploy: needs[0] must be an object with a type                                               |
-      | frob      | true                                     | deploy: frob is not a setting; it takes namespace, host, workflow, gate, overlay, units, providers, needs and run |
+      | executor  | true                                     | deploy: executor must be false, for a unit no live run's Job walks                           |
+      | frob      | true                                     | deploy: frob is not a setting; it takes namespace, host, workflow, gate, overlay, executor, units, providers, needs and run |
 
   Scenario: The block must be an object
     Given the deploy block is []
     When I check the deploy block
-    Then the only problem is "deploy must be an object, with namespace and maybe host, workflow, gate, overlay, units, providers and needs"
+    Then the only problem is "deploy must be an object, with namespace and maybe host, workflow, gate, overlay, executor, units, providers and needs"
 
   Scenario: The workflow must be in .github/workflows
     Given the deploy block's "workflow" is "release.yml"

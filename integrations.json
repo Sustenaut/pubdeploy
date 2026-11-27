@@ -8,6 +8,14 @@
       "mode": "required"
     },
     {
+      "plugin": "bitwarden.secrets",
+      "paths": [
+        "src/pubdeploy/executor_secret.py",
+        "src/pubdeploy/schema.json"
+      ],
+      "mode": "advisory"
+    },
+    {
       "plugin": "github.actions-oidc",
       "paths": [
         ".github/workflows/deploy-check.yml",

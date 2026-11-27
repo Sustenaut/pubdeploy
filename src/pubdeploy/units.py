@@ -10,7 +10,7 @@ adds more, each with its own namespace, overlay, gate and host:
 
 They share the workflow, and every need with no `unit`; `"unit": "other"`
 scopes a need to one. A unit takes nothing of the top level's namespace,
-overlay, gate or host.
+overlay, gate, host or executor.
 
 When the workflow calls pubdeploy's k8s-deploy.yml, its `deploys` lines and
 the units must agree: each unit's overlay and namespace (the unit the
@@ -32,7 +32,7 @@ import yaml
 
 from .schema import DEFAULT_OVERLAY, DEFAULT_WORKFLOW, WORKFLOWS
 
-OWN = ("namespace", "overlay", "gate", "host")
+OWN = ("namespace", "overlay", "gate", "host", "executor")
 K8S_DEPLOY = re.compile(r"(?P<owner>[A-Za-z0-9][A-Za-z0-9-]*)/pubdeploy/\.github/workflows/k8s-deploy\.ya?ml@"
                         r"(?:v|[0-9a-f]{40}[ \t]+#[ \t]*v)(?P<version>[0-9][^\s'\"]*)")
 CI = "main"  # the CI workflow pubrules sync writes, by name
