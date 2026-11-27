@@ -2,7 +2,7 @@
   "claims": {
     "identity": {
       "class": "archival",
-      "content": "pubdeploy 0.8.1 is released as v0.8.1 from commit 70e71c4c2788f93b08e9439d380f583f2bdbcce6.",
+      "content": "pubdeploy 0.8.2 is released as v0.8.2 from commit 68098a04ba8fe1f8e8650b626d3a09b816663626.",
       "data": {
         "columns": [
           {
@@ -27,25 +27,25 @@
         "rows": [
           [
             "pubdeploy",
-            "0.8.1",
+            "0.8.2",
             "pubdeploy --version",
-            "pubdeploy 0.8.1",
-            "v0.8.1",
-            "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
+            "pubdeploy 0.8.2",
+            "v0.8.2",
+            "68098a04ba8fe1f8e8650b626d3a09b816663626"
           ]
         ]
       },
-      "scope": "the published release v0.8.1 of pubdeploy",
+      "scope": "the published release v0.8.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
+          "revision": "68098a04ba8fe1f8e8650b626d3a09b816663626"
         }
       ]
     },
     "release": {
       "class": "archival",
-      "content": "pubdeploy 0.8.1 was released on 2026-11-25 from commit 70e71c4c2788f93b08e9439d380f583f2bdbcce6 with these changes.",
+      "content": "pubdeploy 0.8.2 was released on 2026-11-27 from commit 68098a04ba8fe1f8e8650b626d3a09b816663626 with these changes.",
       "data": {
         "columns": [
           {
@@ -58,23 +58,23 @@
         "rows": [
           [
             "added",
-            "A name the variables block (version 2) gives a default is a github.variable need with that default as its default param, so pubsec (with Sustenaut/pubsec#45) finds it ready unset; a name without one is declared, as before"
+            "pubdeploy executor --engine URL --run ID walks a live run's needs outside the convergence engine (live runs step 4, what a run's Job runs): it reads the run with the run's token (PUBDEPLOY_RUN_TOKEN), walks each need with walk --need as the engine's executor does, as many at once as the run's parallel, posts each move as an event numbered by the need's own sequence (re-posted after a 5xx), reads the run every 5 s for a Stop and cancels and acts on each walking need by its stop class, and exits 0, 3 (refused) or 1 (unreachable) after posting its exit"
           ]
         ]
       },
       "depends": [
         "#identity"
       ],
-      "scope": "the published release v0.8.1 of pubdeploy",
+      "scope": "the published release v0.8.2 of pubdeploy",
       "sources": [
         {
           "ref": "pubdeploy",
-          "revision": "70e71c4c2788f93b08e9439d380f583f2bdbcce6"
+          "revision": "68098a04ba8fe1f8e8650b626d3a09b816663626"
         }
       ]
     }
   },
-  "created": "2026-11-25T00:00:00Z",
+  "created": "2026-11-27T00:00:00Z",
   "sections": [
     {
       "heading": "Identity",
