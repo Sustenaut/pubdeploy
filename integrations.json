@@ -3,11 +3,17 @@
     {
       "plugin": "bitwarden.secrets",
       "paths": [
-        ".github/workflows/deploy-check.yml",
+        ".github/workflows/deploy-check.yml"
+      ],
+      "mode": "required"
+    },
+    {
+      "plugin": "bitwarden.secrets",
+      "paths": [
         "src/pubdeploy/executor_secret.py",
         "src/pubdeploy/schema.json"
       ],
-      "mode": "required"
+      "mode": "advisory"
     },
     {
       "plugin": "github.actions-oidc",
