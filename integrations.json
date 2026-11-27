@@ -3,7 +3,9 @@
     {
       "plugin": "bitwarden.secrets",
       "paths": [
-        ".github/workflows/deploy-check.yml"
+        ".github/workflows/deploy-check.yml",
+        "src/pubdeploy/executor_secret.py",
+        "src/pubdeploy/schema.json"
       ],
       "mode": "required"
     },
