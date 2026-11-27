@@ -96,6 +96,15 @@ Feature: The needs a deploy block implies, and the order they are walked in
       | github.variable:EXAMPLE_APP_INSTALLATION_ID | github_app |
       | github.secret:EXAMPLE_APP_KEY          | github_app |
 
+  Scenario: An app's client id, when it names one, is a need of its own
+    Given pubrules.json's github_app block names the app "example-app" and its client id
+    When I load the plan
+    Then its needs include
+      | id                                     | implied by |
+      | github.variable:EXAMPLE_APP_ID         | github_app |
+      | github.variable:EXAMPLE_APP_CLIENT_ID  | github_app |
+      | github.secret:EXAMPLE_APP_KEY          | github_app |
+
   Scenario: Without a server's setting in the secrets block, there is no deploy-settings need
     Given the secrets block sends only "EXAMPLE_TOKEN"
     When I load the plan

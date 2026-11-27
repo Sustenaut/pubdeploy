@@ -1,0 +1,4 @@
+{
+  "category": "added",
+  "change": "the github_app block's client_id, when an app names one, is a github.variable need of its own, as pubrules takes it from its next release"
+}

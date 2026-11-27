@@ -121,11 +121,12 @@ def reversed_needs(world):
     world.block["needs"].reverse()
 
 
-@given(parsers.parse('pubrules.json\'s github_app block names the app "{app}"'))
-def github_app(world, app):
+@given(parsers.re(r'pubrules.json\'s github_app block names the app "(?P<app>[^"]+)"(?P<client> and its client id)?$'))
+def github_app(world, app, client):
     upper = app.upper().replace("-", "_")
+    slots = ("id", "installation_id", "key") + (("client_id",) if client else ())
     world.config["github_app"] = {slot: {"from": f"{app}-{slot.replace('_', '-')}", "to": f"{upper}_{slot.upper()}"}
-                                  for slot in ("id", "installation_id", "key")}
+                                  for slot in slots}
 
 
 @given(parsers.parse("pubrules.json's variables block gives {name} the default {value}"))

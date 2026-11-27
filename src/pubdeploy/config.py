@@ -72,14 +72,15 @@ def release_commit() -> str | None:
 APP = "github_app"
 OTHERS = "secrets"
 KINDS = {"secret", "variable"}
-SLOTS = {"id": "variable", "installation_id": "variable", "key": "secret"}
+SLOTS = {"id": "variable", "installation_id": "variable", "key": "secret", "client_id": "variable"}
+OPTIONAL = {"client_id"}
 FROM = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 TO = re.compile(r"[A-Z_][A-Z0-9_]*")
 ENVIRONMENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 
 
 def _app_sound(block: Any) -> bool:
-    if not isinstance(block, dict) or set(block) != set(SLOTS):
+    if not isinstance(block, dict) or not set(SLOTS) - OPTIONAL <= set(block) <= set(SLOTS):
         return False
     for given in block.values():
         if not isinstance(given, dict) or set(given) != {"from", "to"}:
@@ -121,7 +122,7 @@ def plan(config: dict[str, Any]) -> list[dict[str, Any]]:
     block = config.get(APP, [])
     apps = block if isinstance(block, list) else [block]
     out = [{"from": app[slot]["from"], "to": app[slot]["to"], "kind": kind, "check": slot}
-           for app in apps for slot, kind in SLOTS.items()]
+           for app in apps for slot, kind in SLOTS.items() if slot in app]
     return out + [{**entry, "check": None} for entry in config.get(OTHERS, [])]
 
 
