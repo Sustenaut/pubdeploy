@@ -13,6 +13,7 @@
     "workflow": "deploy.yml",
     "gate": "DEPLOY_EXAMPLE",
     "overlay": "k8s",
+    "executor": false,
     "needs": [
       {"type": "bitwarden.generated", "name": "example-cookie-secret", "shape": "oauth2-proxy-cookie",
        "secret": {"name": "example-page-secrets", "key": "cookie-secret"}},

@@ -31,8 +31,9 @@ pubdeploy's:
 - **`sustenaut.sync`**, `check(root, config, check) -> (lines, failed)`:
   `pubrules sync` calls it after its own work, and `--check` fails when it
   says so. It is the deploy block's offline check (the block and its needs,
-  the manifests against them, the units against the deploy workflow).
-  It no longer seeds a scheduled walk's caller: the convergence engine walks
+  the manifests against them, the units against the deploy workflow), and
+  each unit's need for the Secret its live runs' Job reads Bitwarden with,
+  which `pubrules sync` adds. It no longer seeds a scheduled walk's caller: the convergence engine walks
   every deploy service. `pubdeploy sync-check [--check]` runs it alone.
 - **`sustenaut.bump`**, `bump(root) -> lines`: `pubrules bump` calls it after
   moving pubrules's own pins. It moves each `deploy.providers` wheel to its
@@ -421,6 +422,23 @@ stop class says. Each walk is a process of its own, so a Stop reaches one need's
 (terminate, or `SIGUSR1` to shorten it). It exits 0 once every need has ended, 3 when the
 engine refuses it and 1 when the engine cannot be reached, after posting its exit
 (`{"executor_exit": CODE}`).
+
+**The Job's credentials** are the unit's namespace's Secret `pubdeploy-executor`, each key
+a variable of the Job's environment. A unit with `bitwarden.*` needs walks them with a
+Bitwarden token, so `pubrules sync --check` fails until a need fills that Secret's
+`BWS_ACCESS_TOKEN`, and `pubrules sync` adds it, last in `deploy.needs`:
+
+```json
+{"type": "bitwarden.secret", "name": "example-executor-bws-token",
+ "secret": {"name": "pubdeploy-executor", "key": "BWS_ACCESS_TOKEN"}}
+```
+
+The item `<unit>-executor-bws-token` is the unit's own token of the read machine account,
+made by hand in Bitwarden, so one unit's token is revoked alone; with more than one unit,
+the need is scoped to its `unit`. `k8s.secrets-declared` asks no manifest to read that
+Secret, and takes no Secret another object owns (a run's token, which its Job owns) for a
+leftover. A unit no Job walks (the engine's own namespace) says `"executor": false`, at
+the top level for its unit or in `units`.
 
 ### Provider contract
 

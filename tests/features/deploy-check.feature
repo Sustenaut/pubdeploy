@@ -239,6 +239,18 @@ Feature: pubrules deploy check walks every need, and changes nothing
     And "github.gate:example" is unknown, "could not be shown ready"
     And no output holds a value
 
+  Scenario: The Secret a live run's Job reads is declared, and no manifest needs to read it
+    Given the deploy block also needs {"type": "bitwarden.secret", "name": "example-executor-bws-token", "secret": {"name": "pubdeploy-executor", "key": "BWS_ACCESS_TOKEN"}}
+    When I run pubdeploy "check" "--offline"
+    Then it does not print "Secret pubdeploy-executor is declared"
+    And it does not print "k8s.secrets-declared:example  the check failed"
+
+  Scenario: A Secret another object owns goes with it, so it is no leftover
+    Given the cluster holds the Secret "run-r1", which a Job owns
+    When I run pubdeploy "check"
+    Then it does not print "run-r1"
+    And no output holds a value
+
   Scenario: Offline, the cluster's Secrets are not looked at
     Given the cluster still holds the Secret "example-old-key", which nothing reads or declares
     When I run pubdeploy "check" "--offline"
