@@ -21,7 +21,7 @@ from typing import Any
 import yaml
 
 from .. import k8s
-from ..executor_secret import SECRET as EXECUTOR
+from ..executor_secret import ACCOUNT as EXECUTOR
 from ..model import Context, Need, Result, Stop
 from . import Base, failed, kubectl_json, kubectl_refused, last_success, not_found, run_job, schema
 

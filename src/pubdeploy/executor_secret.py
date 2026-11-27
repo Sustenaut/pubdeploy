@@ -21,8 +21,8 @@ from typing import Any
 
 from .schema import BLOCK
 
-SECRET = "pubdeploy-executor"
-KEY = "BWS_ACCESS_TOKEN"
+ACCOUNT = "pubdeploy-executor"  # the namespace's ServiceAccount, and its Secret
+VARIABLE = "BWS_ACCESS_TOKEN"
 TYPE = "bitwarden.secret"
 
 
@@ -33,7 +33,7 @@ def item(unit: str) -> str:
 
 def need(block: dict[str, Any], unit: str) -> dict[str, Any]:
     """The need that fills the unit's executor Secret; scoped to the unit when the block has more."""
-    entry: dict[str, Any] = {"type": TYPE, "name": item(unit), "secret": {"name": SECRET, "key": KEY}}
+    entry: dict[str, Any] = {"type": TYPE, "name": item(unit), "secret": {"name": ACCOUNT, "key": VARIABLE}}
     if block.get("units"):
         entry["unit"] = unit
     return entry
@@ -42,7 +42,7 @@ def need(block: dict[str, Any], unit: str) -> dict[str, Any]:
 def fills(entry: dict[str, Any], unit: str) -> bool:
     secret = entry.get("secret")
     return entry.get("unit", unit) == unit and isinstance(secret, dict) \
-        and secret.get("name") == SECRET and secret.get("key") == KEY
+        and secret.get("name") == ACCOUNT and secret.get("key") == VARIABLE
 
 
 def missing(block: Any) -> list[str]:
@@ -64,8 +64,8 @@ def missing(block: Any) -> list[str]:
 
 
 def problem(unit: str) -> str:
-    return (f"pubdeploy: deploy: unit {unit} has bitwarden.* needs and no need filling the Secret {SECRET}'s "
-            f"{KEY}, which its live runs' Job reads Bitwarden with; run `pubrules sync`, which adds the "
+    return (f"pubdeploy: deploy: unit {unit} has bitwarden.* needs and no need filling the Secret {ACCOUNT}'s "
+            f"{VARIABLE}, which its live runs' Job reads Bitwarden with; run `pubrules sync`, which adds the "
             f"{TYPE} {item(unit)}, or say \"executor\": false for a unit no Job walks")
 
 
@@ -82,7 +82,7 @@ def ensure(root: Path, config: dict[str, Any], check: bool) -> tuple[list[str], 
         text = path.read_text(encoding="utf-8")
         entry = need(json.loads(text)[BLOCK], unit)
         path.write_text(appended(text, entry), encoding="utf-8")
-        out.append(f"updated  pubrules.json (deploy.needs {TYPE}:{item(unit)}, the Secret {SECRET}'s {KEY})")
+        out.append(f"updated  pubrules.json (deploy.needs {TYPE}:{item(unit)}, the Secret {ACCOUNT}'s {VARIABLE})")
     return out, False, json.loads(path.read_text(encoding="utf-8"))
 
 
