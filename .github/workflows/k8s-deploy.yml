@@ -198,7 +198,7 @@ jobs:
           echo "scope=${IMAGE##*/}" >> "$GITHUB_OUTPUT"
 
       - name: Build the image
-        uses: Sustenaut/pubhost/actions/docker-build@2196c741d3de6c92c6035c42435c6e517c8ba0ce # v0.1.0
+        uses: Sustenaut/pubhost/actions/docker-build@6b4f7703903d3cbb8e33ef91641e62024b7944f4 # v0.3.0
         with:
           tags: ${{ inputs.image }}:${{ needs.ready.outputs.sha }}
           scope: ${{ steps.deploys.outputs.scope }}
@@ -293,7 +293,7 @@ jobs:
 
       - name: Deploy to the server
         if: steps.gate.outputs.deploy == 'true'
-        uses: Sustenaut/pubdeploy/actions/deploy-ssh@327a0d0acfb3d746cb152dc188f37cd4580c8399 # v0.1.0
+        uses: Sustenaut/pubdeploy/actions/deploy-ssh@7b136859d675e4668c95f58fd253de0c88e74793 # v0.8.2
         with:
           command: ${{ matrix.unit }}
           input: ${{ runner.temp }}/${{ matrix.unit }}.yaml
